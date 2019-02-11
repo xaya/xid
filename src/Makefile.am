@@ -7,4 +7,7 @@ xid_LDADD = \
   $(XAYAGAME_LIBS) \
   $(JSON_LIBS) \
   $(GLOG_LIBS) $(GFLAGS_LIBS)
-xid_SOURCES = main.cpp
+xid_SOURCES = main.cpp \
+  logic.cpp
+noinst_HEADERS = \
+  logic.hpp
