@@ -4,6 +4,8 @@
 
 #include "logic.hpp"
 
+#include "schema.hpp"
+
 #include <glog/logging.h>
 
 namespace xid
@@ -12,7 +14,7 @@ namespace xid
 void
 XidGame::SetupSchema (sqlite3* db)
 {
-  LOG (WARNING) << "Not setting up schema for now";
+  SetupDatabaseSchema (db);
 }
 
 void
