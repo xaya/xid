@@ -9,8 +9,12 @@ libxid_la_CXXFLAGS = \
 libxid_la_LIBADD = \
   $(JSON_LIBS) $(GLOG_LIBS) $(SQLITE3_LIBS)
 libxid_la_SOURCES = \
+  database.cpp \
+  gamestatejson.cpp \
   schema.cpp
 libxidheaders = \
+  database.hpp \
+  gamestatejson.hpp \
   schema.hpp
 
 xid_CXXFLAGS = \
@@ -19,8 +23,7 @@ xid_CXXFLAGS = \
 xid_LDADD = \
   $(builddir)/libxid.la \
   $(XAYAGAME_LIBS) \
-  $(JSON_LIBS) \
-  $(GLOG_LIBS) $(GFLAGS_LIBS)
+  $(JSON_LIBS) $(GLOG_LIBS) $(GFLAGS_LIBS)
 xid_SOURCES = main.cpp \
   logic.cpp
 xidheaders = \
@@ -33,12 +36,13 @@ TESTS = tests
 
 tests_CXXFLAGS = \
   $(GTEST_MAIN_CFLAGS) \
-  $(GTEST_CFLAGS) $(GLOG_CFLAGS) $(SQLITE3_CFLAGS)
+  $(JSON_CFLAGS) $(GTEST_CFLAGS) $(GLOG_CFLAGS) $(SQLITE3_CFLAGS)
 tests_LDADD = \
   $(builddir)/libxid.la \
   $(GTEST_MAIN_LIBS) \
-  $(GTEST_LIBS) $(GLOG_LIBS) $(SQLITE3_LIBS)
+  $(JSON_LIBS) $(GTEST_LIBS) $(GLOG_LIBS) $(SQLITE3_LIBS)
 tests_SOURCES = \
+  gamestatejson_tests.cpp \
   schema_tests.cpp \
   \
   dbtest.cpp

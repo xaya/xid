@@ -16,6 +16,8 @@
 namespace xid
 {
 
+class SQLiteDatabase;
+
 /**
  * The game logic implementation for the xid game-state processor.
  */
@@ -33,6 +35,8 @@ protected:
   void UpdateState (sqlite3* db, const Json::Value& blockData) override;
 
   Json::Value GetStateAsJson (sqlite3* db) override;
+
+  friend class SQLiteDatabase;
 
 public:
 

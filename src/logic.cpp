@@ -4,12 +4,42 @@
 
 #include "logic.hpp"
 
+#include "database.hpp"
+#include "gamestatejson.hpp"
 #include "schema.hpp"
 
 #include <glog/logging.h>
 
 namespace xid
 {
+
+/**
+ * Database instance based on an SQLiteGame.
+ */
+class SQLiteDatabase : public Database
+{
+
+private:
+
+  /** Underlying SQLiteGame instance.  */
+  XidGame& game;
+
+public:
+
+  explicit SQLiteDatabase (XidGame& g)
+    : game(g)
+  {}
+
+  SQLiteDatabase (const SQLiteDatabase&) = delete;
+  void operator= (const SQLiteDatabase&) = delete;
+
+  sqlite3_stmt*
+  PrepareStatement (const std::string& sql) override
+  {
+    return game.PrepareStatement (sql);
+  }
+
+};
 
 void
 XidGame::SetupSchema (sqlite3* db)
@@ -62,8 +92,8 @@ XidGame::UpdateState (sqlite3* db, const Json::Value& blockData)
 Json::Value
 XidGame::GetStateAsJson (sqlite3* db)
 {
-  LOG (WARNING) << "Returning empty game state for now";
-  return Json::Value ();
+  SQLiteDatabase dbObj(*this);
+  return GetFullState (dbObj);
 }
 
 } // namespace xid

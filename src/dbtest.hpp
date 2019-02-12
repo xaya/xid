@@ -5,9 +5,13 @@
 #ifndef XID_DBTEST_HPP
 #define XID_DBTEST_HPP
 
+#include "database.hpp"
+
 #include <gtest/gtest.h>
 
 #include <sqlite3.h>
+
+#include <memory>
 
 namespace xid
 {
@@ -24,6 +28,9 @@ private:
   /** The SQLite database handle.  */
   sqlite3* handle = nullptr;
 
+  /** The Database instance used for testing (with statement cache).  */
+  std::unique_ptr<Database> db;
+
 protected:
 
   DBTest ();
@@ -37,6 +44,17 @@ protected:
   {
     return handle;
   }
+
+  /**
+   * Returns a Database instance for the test.
+   */
+  Database& GetDb ();
+
+  /**
+   * Executes the given SQL statement directly.  This can be used to modify
+   * the database for setting up the test (e.g. inserting data).
+   */
+  void Execute (const std::string& sql);
 
 };
 
