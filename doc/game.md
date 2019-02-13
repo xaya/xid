@@ -31,5 +31,33 @@ instead!
 
 ## <a id="moves">Move Format</a>
 
-*[Moves](https://github.com/xaya/xaya_docs/blob/master/games.md#moves)
-are not yet implemented and the format is not yet fully specified.*
+[Moves](https://github.com/xaya/xaya_docs/blob/master/games.md#moves)
+in Xid allow owners of XAYA names to change the data associated with their
+names in the Xid state.
+
+The move data itself must be a **JSON object** of the following form:
+
+    {
+      "s":
+        {
+          "g": [GLOBAL1, GLOBAL2, ...],
+          "a":
+            {
+              APP1: [ADDR1, ADDR2, ...],
+              ...
+            }
+        }
+    }
+
+If `s.g` is present, then the list of **global signers** for the name making
+the move is set precisely to the given array of strings.  Similarly, for each
+key `APP`i present in `s.a`, the list of signer keys **for application `APP`i**
+is set precisely to the given list.
+
+**NOTE:**  If `s.g` is not present or if some application name is not
+a key in `s.a`, then the list of global signers or signers for that application
+*is unchanged* (as opposed to set to an empty list).
+
+Other keys in the top-level object or in `s` are ignored, as are values
+that do not have the correct format (object, array, string).  All correctly
+formatted parts of the move are still executed in that case.
