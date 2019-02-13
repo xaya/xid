@@ -45,9 +45,11 @@ tests_SOURCES = \
   gamestatejson_tests.cpp \
   schema_tests.cpp \
   \
-  dbtest.cpp
+  dbtest.cpp \
+  testutils.cpp
 check_HEADERS = \
-  dbtest.hpp
+  dbtest.hpp \
+  testutils.hpp
 
 schema.cpp: schema_head.cpp schema.sql schema_tail.cpp
 	cat $^ >$@

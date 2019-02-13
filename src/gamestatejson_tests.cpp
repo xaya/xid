@@ -5,6 +5,7 @@
 #include "gamestatejson.hpp"
 
 #include "dbtest.hpp"
+#include "testutils.hpp"
 
 #include <gtest/gtest.h>
 
@@ -17,33 +18,7 @@ namespace xid
 
 /* ************************************************************************** */
 
-class GameStateJsonTests : public DBTestWithSchema
-{
-
-protected:
-
-  /**
-   * Compares the given JSON to the expected value, which is given as string
-   * and parsed into JSON.
-   */
-  void
-  ExpectJsonEquals (const Json::Value& actual, const std::string& expected)
-  {
-    std::istringstream in(expected);
-    Json::Value expectedJson;
-    in >> expectedJson;
-
-    if (actual != expectedJson)
-      FAIL ()
-          << "Actual JSON:\n" << actual
-          << "\n\nis not equal to:\n" << expectedJson;
-  }
-
-};
-
-/* ************************************************************************** */
-
-class GetNameStateTests : public GameStateJsonTests
+class GetNameStateTests : public DBTestWithSchema
 {
 
 protected:
@@ -61,9 +36,9 @@ protected:
 
 TEST_F (GetNameStateTests, Empty)
 {
-  ExpectJsonEquals (GetNameState ("foo"), R"({
+  EXPECT_TRUE (JsonEquals (GetNameState ("foo"), R"({
     "signers": [] 
-  })");
+  })"));
 }
 
 TEST_F (GetNameStateTests, NameFiltering)
@@ -73,9 +48,9 @@ TEST_F (GetNameStateTests, NameFiltering)
       VALUES ("domob", NULL, "global")
   )");
 
-  ExpectJsonEquals (GetNameState ("foo"), R"({
+  EXPECT_TRUE (JsonEquals (GetNameState ("foo"), R"({
     "signers": []
-  })");
+  })"));
 }
 
 TEST_F (GetNameStateTests, Signers)
@@ -89,7 +64,7 @@ TEST_F (GetNameStateTests, Signers)
              ("domob", "app", "app 2")
   )");
 
-  ExpectJsonEquals (GetNameState ("domob"), R"({
+  EXPECT_TRUE (JsonEquals (GetNameState ("domob"), R"({
     "signers":
       [
         {"addresses": ["global 1", "global 2"]},
@@ -102,12 +77,12 @@ TEST_F (GetNameStateTests, Signers)
           "addresses": ["app 1", "app 2"]
         }
       ] 
-  })");
+  })"));
 }
 
 /* ************************************************************************** */
 
-class GetFullStateTests : public GameStateJsonTests
+class GetFullStateTests : public DBTestWithSchema
 {
 
 protected:
@@ -125,9 +100,9 @@ protected:
 
 TEST_F (GetFullStateTests, Empty)
 {
-  ExpectJsonEquals (GetFullState (), R"({
+  EXPECT_TRUE (JsonEquals (GetFullState (), R"({
     "names": {}
-  })");
+  })"));
 }
 
 TEST_F (GetFullStateTests, WithNames)
@@ -139,7 +114,7 @@ TEST_F (GetFullStateTests, WithNames)
              ("foo", NULL, "foo")
   )");
 
-  ExpectJsonEquals (GetFullState (), R"({
+  EXPECT_TRUE (JsonEquals (GetFullState (), R"({
     "names":
       {
         "domob":
@@ -157,7 +132,7 @@ TEST_F (GetFullStateTests, WithNames)
               ]
           }
       }
-  })");
+  })"));
 }
 
 /* ************************************************************************** */
