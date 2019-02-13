@@ -6,6 +6,7 @@
 
 #include "database.hpp"
 #include "gamestatejson.hpp"
+#include "moveprocessor.hpp"
 #include "schema.hpp"
 
 #include <glog/logging.h>
@@ -86,7 +87,10 @@ XidGame::InitialiseState (sqlite3* db)
 void
 XidGame::UpdateState (sqlite3* db, const Json::Value& blockData)
 {
-  LOG (WARNING) << "Not updating state";
+  SQLiteDatabase dbObj(*this);
+
+  MoveProcessor proc(dbObj);
+  proc.ProcessAll (blockData["moves"]);
 }
 
 Json::Value

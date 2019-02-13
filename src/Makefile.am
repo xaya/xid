@@ -11,10 +11,12 @@ libxid_la_LIBADD = \
 libxid_la_SOURCES = \
   database.cpp \
   gamestatejson.cpp \
+  moveprocessor.cpp \
   schema.cpp
 libxidheaders = \
   database.hpp \
   gamestatejson.hpp \
+  moveprocessor.hpp \
   schema.hpp
 
 xid_CXXFLAGS = \
@@ -43,6 +45,7 @@ tests_LDADD = \
   $(JSON_LIBS) $(GTEST_LIBS) $(GLOG_LIBS) $(SQLITE3_LIBS)
 tests_SOURCES = \
   gamestatejson_tests.cpp \
+  moveprocessor_tests.cpp \
   schema_tests.cpp \
   \
   dbtest.cpp \

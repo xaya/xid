@@ -45,6 +45,11 @@ template <typename T>
   void BindParameter (sqlite3_stmt* stmt, int ind, const T& val);
 
 /**
+ * Binds a parameter to NULL.
+ */
+void BindParameterNull (sqlite3_stmt* stmt, int ind);
+
+/**
  * Checks if the column with the given index is NULL.
  */
 bool IsColumnNull (sqlite3_stmt* stmt, int ind);

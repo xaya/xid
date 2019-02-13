@@ -19,6 +19,12 @@ template <>
             SQLITE_OK);
 }
 
+void
+BindParameterNull (sqlite3_stmt* stmt, const int ind)
+{
+  CHECK_EQ (sqlite3_bind_null (stmt, ind), SQLITE_OK);
+}
+
 bool
 IsColumnNull (sqlite3_stmt* stmt, const int ind)
 {
