@@ -5,14 +5,19 @@
 #include "config.h"
 
 #include "logic.hpp"
+#include "xidrpcserver.hpp"
 
 #include <xayagame/defaultmain.hpp>
+#include <xayagame/game.hpp>
 
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
+#include <jsonrpccpp/server/connectors/httpserver.h>
+
 #include <cstdlib>
 #include <iostream>
+#include <memory>
 
 namespace
 {
@@ -30,6 +35,35 @@ DEFINE_int32 (enable_pruning, -1,
 DEFINE_string (datadir, "",
                "base data directory for state data"
                " (will be extended by 'id' the chain)");
+
+class XidInstanceFactory : public xaya::CustomisedInstanceFactory
+{
+
+private:
+
+  /**
+   * Reference to the XidGame instance.  This is needed to construct the
+   * RPC server.
+   */
+  xid::XidGame& rules;
+
+public:
+
+  explicit XidInstanceFactory (xid::XidGame& r)
+    : rules(r)
+  {}
+
+  std::unique_ptr<xaya::RpcServerInterface>
+  BuildRpcServer (xaya::Game& game,
+                  jsonrpc::AbstractServerConnector& conn) override
+  {
+    std::unique_ptr<xaya::RpcServerInterface> res;
+    res.reset (new xaya::WrappedRpcServer<xid::XidRpcServer> (game, rules,
+                                                              conn));
+    return res;
+  }
+
+};
 
 } // anonymous namespace
 
@@ -64,5 +98,8 @@ main (int argc, char** argv)
   config.DataDirectory = FLAGS_datadir;
 
   xid::XidGame rules;
+  XidInstanceFactory instanceFact(rules);
+  config.InstanceFactory = &instanceFact;
+
   return xaya::SQLiteMain (config, "id", rules);
 }

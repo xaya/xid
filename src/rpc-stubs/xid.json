@@ -1,0 +1,16 @@
+[
+  {
+    "name": "stop",
+    "params": {}
+  },
+  {
+    "name": "getcurrentstate",
+    "params": {},
+    "returns": {}
+  },
+  {
+    "name": "waitforchange",
+    "params": {},
+    "returns": {}
+  }
+]

@@ -1,8 +1,14 @@
 noinst_LTLIBRARIES = libxid.la
 bin_PROGRAMS = xid
 
-EXTRA_DIST = schema.sql schema_head.cpp schema_tail.cpp
-CLEANFILES = schema.cpp
+EXTRA_DIST = \
+  rpc-stubs/xid.json \
+  schema.sql schema_head.cpp schema_tail.cpp
+
+RPC_STUBS = \
+  rpc-stubs/xidrpcserverstub.h
+BUILT_SOURCES = $(RPC_STUBS)
+CLEANFILES = $(RPC_STUBS) schema.cpp
 
 libxid_la_CXXFLAGS = \
   $(JSON_CFLAGS) $(GLOG_CFLAGS) $(SQLITE3_CFLAGS)
@@ -27,9 +33,13 @@ xid_LDADD = \
   $(XAYAGAME_LIBS) \
   $(JSON_LIBS) $(GLOG_LIBS) $(GFLAGS_LIBS)
 xid_SOURCES = main.cpp \
-  logic.cpp
+  logic.cpp \
+  xidrpcserver.cpp
 xidheaders = \
-  logic.hpp
+  logic.hpp \
+  xidrpcserver.hpp \
+  \
+  rpc-stubs/xidrpcserverstub.h
 
 noinst_HEADERS = $(libxidheaders) $(xidheaders)
 
@@ -56,3 +66,6 @@ check_HEADERS = \
 
 schema.cpp: schema_head.cpp schema.sql schema_tail.cpp
 	cat $^ >$@
+
+rpc-stubs/xidrpcserverstub.h: $(srcdir)/rpc-stubs/xid.json
+	jsonrpcstub "$<" --cpp-server=XidRpcServerStub --cpp-server-file="$@"
