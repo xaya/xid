@@ -121,7 +121,11 @@ returns the full game state, Xid also exposes more specific methods for
 retrieving certain parts of the game state.  Where possible, these methods
 should be used, as they allow more efficient access to the required data.
 
-*No specific RPCs are implemented yet.*
+#### `getnamestate`
+
+This method retrieves the data (if any) for **one specific name**.  The name
+in question has to be passed as a JSON string to the keyword argument `name`.
+Returned is the [state data for this name](#json-one-name) as JSON object.
 
 ### Verification Methods
 
