@@ -4,7 +4,6 @@
 
 #include "logic.hpp"
 
-#include "database.hpp"
 #include "gamestatejson.hpp"
 #include "moveprocessor.hpp"
 #include "schema.hpp"
@@ -98,6 +97,17 @@ XidGame::GetStateAsJson (sqlite3* db)
 {
   SQLiteDatabase dbObj(*this);
   return GetFullState (dbObj);
+}
+
+Json::Value
+XidGame::GetCustomStateData (xaya::Game& game, const JsonStateFromDatabase& cb)
+{
+  return SQLiteGame::GetCustomStateData (game, "data",
+    [this, cb] (sqlite3* db)
+      {
+        SQLiteDatabase dbObj(*this);
+        return cb (dbObj);
+      });
 }
 
 } // namespace xid

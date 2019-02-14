@@ -5,12 +5,16 @@
 #ifndef XID_LOGIC_HPP
 #define XID_LOGIC_HPP
 
+#include "database.hpp"
+
+#include <xayagame/game.hpp>
 #include <xayagame/sqlitegame.hpp>
 
 #include <sqlite3.h>
 
 #include <json/json.h>
 
+#include <functional>
 #include <string>
 
 namespace xid
@@ -40,10 +44,21 @@ protected:
 
 public:
 
+  /** Type for a callback that retrieves JSON data from the database.  */
+  using JsonStateFromDatabase = std::function<Json::Value (Database& db)>;
+
   XidGame () = default;
 
   XidGame (const XidGame&) = delete;
   void operator= (const XidGame&) = delete;
+
+  /**
+   * Returns custom game-state data as JSON.  The provided callback is invoked
+   * with a Database instance to retrieve the "main" state data that is returned
+   * in the JSON "data" field.
+   */
+  Json::Value GetCustomStateData (xaya::Game& game,
+                                  const JsonStateFromDatabase& cb);
 
 };
 

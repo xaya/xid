@@ -14,6 +14,8 @@
 #include <json/json.h>
 #include <jsonrpccpp/server.h>
 
+#include <string>
+
 namespace xid
 {
 
@@ -42,6 +44,8 @@ public:
   virtual void stop () override;
   virtual Json::Value getcurrentstate () override;
   virtual Json::Value waitforchange () override;
+
+  virtual Json::Value getnamestate (const std::string& name) override;
 
 };
 

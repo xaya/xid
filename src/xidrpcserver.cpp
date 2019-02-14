@@ -4,6 +4,8 @@
 
 #include "xidrpcserver.hpp"
 
+#include "gamestatejson.hpp"
+
 #include <xayagame/uint256.hpp>
 
 #include <glog/logging.h>
@@ -39,6 +41,17 @@ XidRpcServer::waitforchange ()
 
   /* Otherwise, return the block hash.  */
   return block.ToHex ();
+}
+
+Json::Value
+XidRpcServer::getnamestate (const std::string& name)
+{
+  LOG (INFO) << "RPC method called: getnamestate " << name;
+  return logic.GetCustomStateData (game,
+    [this, name] (Database& db)
+      {
+        return GetNameState (db, name);
+      });
 }
 
 } // namespace xid

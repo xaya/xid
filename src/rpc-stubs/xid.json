@@ -12,5 +12,14 @@
     "name": "waitforchange",
     "params": {},
     "returns": {}
+  },
+
+  {
+    "name": "getnamestate",
+    "params":
+      {
+        "name": "foobar"
+      },
+    "returns": {}
   }
 ]
