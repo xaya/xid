@@ -39,6 +39,7 @@ PKG_CHECK_MODULES([GFLAGS], [gflags])
 
 AC_CONFIG_FILES([
   Makefile \
+  gametest/Makefile \
   src/Makefile
 ])
 AC_OUTPUT

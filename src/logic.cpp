@@ -51,7 +51,7 @@ XidGame::SetupSchema (sqlite3* db)
 void
 XidGame::GetInitialStateBlock (unsigned& height, std::string& hashHex) const
 {
-  const xaya::Chain chain = GetContext ().GetChain ();
+  const xaya::Chain chain = GetChain ();
   switch (chain)
     {
     case xaya::Chain::MAIN:
