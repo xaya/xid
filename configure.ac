@@ -36,9 +36,11 @@ PKG_CHECK_MODULES([GTEST_MAIN], [gtest_main])
 # https://bugs.freedesktop.org/show_bug.cgi?id=19541.
 PKG_CONFIG="${PKG_CONFIG} --static"
 PKG_CHECK_MODULES([GFLAGS], [gflags])
+PKG_CHECK_MODULES([PROTOBUF], [protobuf])
 
 AC_CONFIG_FILES([
   Makefile \
+  auth/Makefile \
   gametest/Makefile \
   src/Makefile
 ])

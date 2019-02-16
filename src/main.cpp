@@ -13,6 +13,8 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
+#include <google/protobuf/stubs/common.h>
+
 #include <jsonrpccpp/server/connectors/httpserver.h>
 
 #include <cstdlib>
@@ -71,6 +73,7 @@ int
 main (int argc, char** argv)
 {
   google::InitGoogleLogging (argv[0]);
+  GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   gflags::SetUsageMessage ("Run Xaya ID daemon");
   gflags::SetVersionString (PACKAGE_VERSION);
@@ -101,5 +104,8 @@ main (int argc, char** argv)
   XidInstanceFactory instanceFact(rules);
   config.InstanceFactory = &instanceFact;
 
-  return xaya::SQLiteMain (config, "id", rules);
+  const int rc = xaya::SQLiteMain (config, "id", rules);
+
+  google::protobuf::ShutdownProtobufLibrary ();
+  return rc;
 }

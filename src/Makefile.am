@@ -27,11 +27,11 @@ libxidheaders = \
 
 xid_CXXFLAGS = \
   $(XAYAGAME_CFLAGS) \
-  $(JSON_CFLAGS) $(GLOG_CFLAGS) $(GFLAGS_CFLAGS)
+  $(JSON_CFLAGS) $(PROTOBUF_CFLAGS) $(GLOG_CFLAGS) $(GFLAGS_CFLAGS)
 xid_LDADD = \
   $(builddir)/libxid.la \
   $(XAYAGAME_LIBS) \
-  $(JSON_LIBS) $(GLOG_LIBS) $(GFLAGS_LIBS)
+  $(JSON_LIBS) $(PROTOBUF_LIBS) $(GLOG_LIBS) $(GFLAGS_LIBS)
 xid_SOURCES = main.cpp \
   logic.cpp \
   xidrpcserver.cpp
