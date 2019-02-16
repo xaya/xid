@@ -12,10 +12,12 @@ libxidauth_la_LIBADD = \
   $(OPENSSL_LIBS) $(PROTOBUF_LIBS) $(GLOG_LIBS)
 libxidauth_la_SOURCES = \
   base64.cpp \
+  time.cpp \
   \
   auth.pb.cc
 xidauth_HEADERS = \
   base64.hpp \
+  time.hpp \
   \
   auth.pb.h
 
@@ -30,7 +32,8 @@ tests_LDADD = \
   $(GTEST_MAIN_LIBS) \
   $(OPENSSL_LIBS) $(PROTOBUF_LIBS) $(GLOG_LIBS)
 tests_SOURCES = \
-  base64_tests.cpp
+  base64_tests.cpp \
+  time_tests.cpp
 
 auth.pb.h auth.pb.cc: $(srcdir)/auth.proto
 	protoc --cpp_out=. "$<"
