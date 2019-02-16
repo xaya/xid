@@ -11,11 +11,26 @@ libxidauth_la_CXXFLAGS = \
 libxidauth_la_LIBADD = \
   $(OPENSSL_LIBS) $(PROTOBUF_LIBS) $(GLOG_LIBS)
 libxidauth_la_SOURCES = \
+  base64.cpp \
   \
   auth.pb.cc
 xidauth_HEADERS = \
+  base64.hpp \
   \
   auth.pb.h
+
+check_PROGRAMS = tests
+TESTS = tests
+
+tests_CXXFLAGS = \
+  $(GTEST_MAIN_CFLAGS) \
+  $(OPENSSL_CFLAGS) $(PROTOBUF_CFLAGS) $(GLOG_CFLAGS)
+tests_LDADD = \
+  $(builddir)/libxidauth.la \
+  $(GTEST_MAIN_LIBS) \
+  $(OPENSSL_LIBS) $(PROTOBUF_LIBS) $(GLOG_LIBS)
+tests_SOURCES = \
+  base64_tests.cpp
 
 auth.pb.h auth.pb.cc: $(srcdir)/auth.proto
 	protoc --cpp_out=. "$<"
