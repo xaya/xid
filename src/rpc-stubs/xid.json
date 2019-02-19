@@ -32,5 +32,14 @@
         "data": {}
       },
     "returns": {}
+  },
+  {
+    "name": "setauthsignature",
+    "params":
+      {
+        "password": "base64",
+        "signature": "signature"
+      },
+    "returns": "password"
   }
 ]

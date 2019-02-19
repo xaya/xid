@@ -50,6 +50,8 @@ public:
   Json::Value getauthmessage (const std::string& application,
                               const Json::Value& data,
                               const std::string& name) override;
+  std::string setauthsignature (const std::string& password,
+                                const std::string& signature) override;
 
 };
 

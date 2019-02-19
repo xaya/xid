@@ -35,6 +35,10 @@ enum class ErrorCode
   /* The provided data (name, applcation, extra) is invalid while constructing
      an auth message (not validating a password).  */
   AUTH_INVALID_DATA = 1,
+  /* An invalid password string was provided, which could not be decoded to
+     a valid protocol buffer.  This is not thrown when validating a password,
+     just when modifying it.  */
+  AUTH_INVALID_PASSWORD = 2,
 
 };
 
@@ -154,6 +158,32 @@ XidRpcServer::getauthmessage (const std::string& application,
   res["password"] = cred.ToPassword ();
 
   return res;
+}
+
+std::string
+XidRpcServer::setauthsignature (const std::string& password,
+                                const std::string& signature)
+{
+  LOG (INFO)
+      << "RPC method called: setauthsignature\n"
+      << "  password: " << password << "\n"
+      << "  signature: " << signature;
+
+  /* The name and application are not relevant for this, as they are not
+     part of the password string in any way.  Thus we can just set dummy
+     values for them.  */
+  Credentials cred("dummy", "dummy");
+
+  if (!cred.FromPassword (password))
+    ThrowJsonError (ErrorCode::AUTH_INVALID_PASSWORD,
+                    "failed to parse the password string");
+  if (!cred.ValidateFormat ())
+    ThrowJsonError (ErrorCode::AUTH_INVALID_DATA,
+                    "the authentication data is invalid");
+
+  cred.SetSignature (signature);
+
+  return cred.ToPassword ();
 }
 
 } // namespace xid

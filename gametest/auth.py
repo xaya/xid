@@ -41,6 +41,7 @@ class AuthTest (XidTest):
     self.testGetAuthMessage ()
     self.testAuthDataErrors ()
     self.testAuthDataValidation ()
+    self.testPasswordErrors ()
 
   def testGetAuthMessage (self):
     self.mainLogger.info ("Testing getauthmessage...")
@@ -114,6 +115,13 @@ class AuthTest (XidTest):
                         self.rpc.game.getauthmessage,
                         name=t["name"], application=t["application"],
                         data=t["data"])
+
+  def testPasswordErrors (self):
+    self.mainLogger.info ("Testing error handling for password strings...")
+
+    self.expectError (2, "failed to parse the password string",
+                      self.rpc.game.setauthsignature,
+                      password="invalid base64", signature="")
 
 
 if __name__ == "__main__":
