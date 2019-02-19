@@ -2,6 +2,7 @@ TEST_LIBRARY = \
   xidtest.py
 
 REGTESTS = \
+  auth.py \
   getnamestate.py \
   signer_update.py
 

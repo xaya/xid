@@ -6,12 +6,49 @@
 
 #include "gamestatejson.hpp"
 
+#include "auth/credentials.hpp"
+#include "auth/time.hpp"
+
 #include <xayagame/uint256.hpp>
 
 #include <glog/logging.h>
 
 namespace xid
 {
+
+namespace
+{
+
+/**
+ * Error codes returned from the RPC server.  All values should have an
+ * explicit integer number, because this also defines the RPC protocol
+ * itself for clients that do not have access to the ErrorCode enum
+ * directly and only read the integer values.
+ */
+enum class ErrorCode
+{
+
+  /* Invalid values for arguments (e.g. passing a malformed JSON value for
+     an object parameter or an out-of-range integer).  */
+  INVALID_ARGUMENT = -1,
+
+  /* The provided data (name, applcation, extra) is invalid while constructing
+     an auth message (not validating a password).  */
+  AUTH_INVALID_DATA = 1,
+
+};
+
+/**
+ * Throws a JSON-RPC error from the current method.  This throws an exception,
+ * so does not return to the caller in a normal way.
+ */
+void
+ThrowJsonError (const ErrorCode code, const std::string& msg)
+{
+  throw jsonrpc::JsonRpcException (static_cast<int> (code), msg);
+}
+
+} // anonymous namespace
 
 void
 XidRpcServer::stop ()
@@ -52,6 +89,71 @@ XidRpcServer::getnamestate (const std::string& name)
       {
         return GetNameState (db, name);
       });
+}
+
+namespace
+{
+
+/**
+ * Parses the data JSON argument for auth RPCs and sets the corresponding
+ * data in the Credentials instance.  Throws a JSON-RPC error if the data
+ * object is invalid.
+ */
+void
+ApplyAuthDataJson (const Json::Value& data, Credentials& cred)
+{
+  CHECK (data.isObject ());
+
+  const auto& expiryVal = data["expiry"];
+  if (!expiryVal.isNull ())
+    {
+      if (!expiryVal.isInt ())
+        ThrowJsonError (ErrorCode::INVALID_ARGUMENT,
+                        "expiry must be an integer");
+      cred.SetExpiry (TimeFromUnix (expiryVal.asInt ()));
+    }
+
+  const auto& extraVal = data["extra"];
+  if (!extraVal.isNull ())
+    {
+      if (!extraVal.isObject ())
+        ThrowJsonError (ErrorCode::INVALID_ARGUMENT, "extra must be an object");
+      for (auto i = extraVal.begin (); i != extraVal.end (); ++i)
+        {
+          CHECK (i.key ().isString ());
+          if (!i->isString ())
+            ThrowJsonError (ErrorCode::INVALID_ARGUMENT,
+                            "extra value must be a string");
+          cred.AddExtra (i.key ().asString (), i->asString ());
+        }
+    }
+}
+
+} // anonymous namespace
+
+Json::Value
+XidRpcServer::getauthmessage (const std::string& application,
+                              const Json::Value& data,
+                              const std::string& name)
+{
+  LOG (INFO)
+      << "RPC method called: getauthmessage\n"
+      << "  name: " << name << "\n"
+      << "  application: " << application << "\n"
+      << "  data: " << data;
+
+  Credentials cred(name, application);
+  ApplyAuthDataJson (data, cred);
+
+  if (!cred.ValidateFormat ())
+    ThrowJsonError (ErrorCode::AUTH_INVALID_DATA,
+                    "the authentication data is invalid");
+
+  Json::Value res(Json::objectValue);
+  res["authmessage"] = cred.GetAuthMessage ();
+  res["password"] = cred.ToPassword ();
+
+  return res;
 }
 
 } // namespace xid

@@ -21,5 +21,16 @@
         "name": "foobar"
       },
     "returns": {}
+  },
+
+  {
+    "name": "getauthmessage",
+    "params":
+      {
+        "name": "foobar",
+        "application": "app",
+        "data": {}
+      },
+    "returns": {}
   }
 ]

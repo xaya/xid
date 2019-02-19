@@ -41,11 +41,15 @@ public:
     : XidRpcServerStub(conn), game(g), logic(l)
   {}
 
-  virtual void stop () override;
-  virtual Json::Value getcurrentstate () override;
-  virtual Json::Value waitforchange () override;
+  void stop () override;
+  Json::Value getcurrentstate () override;
+  Json::Value waitforchange () override;
 
-  virtual Json::Value getnamestate (const std::string& name) override;
+  Json::Value getnamestate (const std::string& name) override;
+
+  Json::Value getauthmessage (const std::string& application,
+                              const Json::Value& data,
+                              const std::string& name) override;
 
 };
 
