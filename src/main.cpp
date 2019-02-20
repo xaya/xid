@@ -4,6 +4,8 @@
 
 #include "config.h"
 
+#include "rpc-stubs/xaya-ro-rpcclient.h"
+
 #include "logic.hpp"
 #include "xidrpcserver.hpp"
 
@@ -15,6 +17,8 @@
 
 #include <google/protobuf/stubs/common.h>
 
+#include <jsonrpccpp/client.h>
+#include <jsonrpccpp/client/connectors/httpclient.h>
 #include <jsonrpccpp/server/connectors/httpserver.h>
 
 #include <cstdlib>
@@ -49,10 +53,13 @@ private:
    */
   xid::XidGame& rules;
 
+  /** Read-only Xaya RPC connection for server.  */
+  XayaRoRpcClient& xayaRo;
+
 public:
 
-  explicit XidInstanceFactory (xid::XidGame& r)
-    : rules(r)
+  explicit XidInstanceFactory (xid::XidGame& r, XayaRoRpcClient& xro)
+    : rules(r), xayaRo(xro)
   {}
 
   std::unique_ptr<xaya::RpcServerInterface>
@@ -60,8 +67,8 @@ public:
                   jsonrpc::AbstractServerConnector& conn) override
   {
     std::unique_ptr<xaya::RpcServerInterface> res;
-    res.reset (new xaya::WrappedRpcServer<xid::XidRpcServer> (game, rules,
-                                                              conn));
+    res.reset (new xaya::WrappedRpcServer<xid::XidRpcServer> (
+        game, rules, xayaRo, conn));
     return res;
   }
 
@@ -100,8 +107,11 @@ main (int argc, char** argv)
   config.EnablePruning = FLAGS_enable_pruning;
   config.DataDirectory = FLAGS_datadir;
 
+  jsonrpc::HttpClient httpXaya(config.XayaRpcUrl);
+  XayaRoRpcClient xayaRo(httpXaya, jsonrpc::JSONRPC_CLIENT_V1);
+
   xid::XidGame rules;
-  XidInstanceFactory instanceFact(rules);
+  XidInstanceFactory instanceFact(rules, xayaRo);
   config.InstanceFactory = &instanceFact;
 
   const int rc = xaya::SQLiteMain (config, "id", rules);

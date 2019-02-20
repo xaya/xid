@@ -1,0 +1,12 @@
+[
+  {
+    "name": "verifymessage",
+    "params":
+      {
+        "address": "",
+        "signature": "base64",
+        "message": "message"
+      },
+    "returns": {}
+  }
+]

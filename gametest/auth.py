@@ -7,6 +7,8 @@
 
 from xidtest import XidTest
 
+import base64
+
 """
 Tests the authentication RPC methods.
 """
@@ -14,34 +16,63 @@ Tests the authentication RPC methods.
 
 class AuthTest (XidTest):
 
+  def createPassword (self, name, app, addr, expiry, extra):
+    """
+    Creates a Xid password for the given data, signed with the given
+    Xaya address.
+    """
+
+    d = {
+      "expiry": expiry,
+      "extra": extra,
+    }
+    authMsg = self.rpc.game.getauthmessage (name=name, application=app, data=d)
+
+    signed = self.rpc.xaya.signmessage (addr, authMsg["authmessage"])
+    pwd = self.rpc.game.setauthsignature (password=authMsg["password"],
+                                          signature=signed)
+
+    return pwd
+
   def run (self):
     self.generate (101)
 
-    addrGeneral = self.rpc.xaya.getnewaddress ("", "legacy")
-    addrApp = self.rpc.xaya.getnewaddress ("", "legacy")
+    self.addrGeneral = self.rpc.xaya.getnewaddress ("", "legacy")
+    self.addrApp = self.rpc.xaya.getnewaddress ("", "legacy")
+    self.addrEmpty = self.rpc.xaya.getnewaddress ("", "legacy")
     self.sendMove ("domob", {"s": {
-      "g": [addrGeneral],
+      "g": ["invalid just for fun", self.addrGeneral],
       "a":
         {
-          "app": [addrApp],
+          "": [self.addrEmpty],
+          "app": [self.addrApp],
         },
     }})
+    self.sendMove ("", {"s": {"g": [self.addrGeneral]}})
     self.generate (1)
     self.assertEqual (self.getRpc ("getnamestate", name="domob"), {
       "signers":
         [
-          {"addresses": [addrGeneral]},
+          {"addresses": [self.addrGeneral, "invalid just for fun"]},
+          {
+            "application": "",
+            "addresses": [self.addrEmpty],
+          },
           {
             "application": "app",
-            "addresses": [addrApp],
+            "addresses": [self.addrApp],
           },
         ],
+    })
+    self.assertEqual (self.getRpc ("getnamestate", name=""), {
+      "signers": [{"addresses": [self.addrGeneral]}],
     })
 
     self.testGetAuthMessage ()
     self.testAuthDataErrors ()
     self.testAuthDataValidation ()
     self.testPasswordErrors ()
+    self.testVerification ()
 
   def testGetAuthMessage (self):
     self.mainLogger.info ("Testing getauthmessage...")
@@ -122,6 +153,144 @@ class AuthTest (XidTest):
     self.expectError (2, "failed to parse the password string",
                       self.rpc.game.setauthsignature,
                       password="invalid base64", signature="")
+
+  def testVerification (self):
+    self.mainLogger.info ("Testing credentials verification...")
+
+    expired = 42
+    notExpired = 2000000000
+
+    # Invalid encoded data.
+    for pwd in ["invalid base64", base64.b64encode (bytes ([0, 20]))]:
+      res = self.getRpc ("verifyauth", name="domob", application="app",
+                         password=pwd)
+      self.assertEqual (res, {
+        "valid": False,
+        "state": "malformed",
+      })
+
+    # Invalid application string.
+    res = self.getRpc ("verifyauth", name="domob", application="invalid app",
+                       password="")
+    self.assertEqual (res, {
+      "valid": False,
+      "state": "invalid-data",
+    })
+
+    # Invalid signature (unauthorised key).  This is also expired, to make
+    # sure that we get an "invalid signature" error rather than "expired"
+    # for this case.
+    pwd = self.createPassword ("domob", "other", self.addrApp, expired, {})
+    res = self.getRpc ("verifyauth", name="domob", application="other",
+                       password=pwd)
+    self.assertEqual (res, {
+      "valid": False,
+      "state": "invalid-signature",
+      "expiry": expired,
+      "extra": {},
+    })
+
+    # Invalid signature (changed name).
+    pwd = self.createPassword ("domob", "app", self.addrGeneral, None, {})
+    res = self.getRpc ("verifyauth", name="other", application="app",
+                       password=pwd)
+    self.assertEqual (res, {
+      "valid": False,
+      "state": "invalid-signature",
+      "expiry": None,
+      "extra": {},
+    })
+
+    # Invalid signature (changed application).
+    pwd = self.createPassword ("domob", "app", self.addrGeneral, None, {})
+    res = self.getRpc ("verifyauth", name="domob", application="other",
+                       password=pwd)
+    self.assertEqual (res, {
+      "valid": False,
+      "state": "invalid-signature",
+      "expiry": None,
+      "extra": {},
+    })
+
+    # Expired but otherwise valid.
+    pwd = self.createPassword ("domob", "app", self.addrGeneral, expired, {})
+    res = self.getRpc ("verifyauth", name="domob", application="app",
+                       password=pwd)
+    self.assertEqual (res, {
+      "valid": False,
+      "state": "expired",
+      "expiry": expired,
+      "extra": {},
+    })
+
+    # Valid without expiry and signed with general key.
+    extra = {
+      "some": "stuff",
+      "for": "testing",
+    }
+    pwd = self.createPassword ("domob", "app", self.addrGeneral, None, extra)
+    res = self.getRpc ("verifyauth", name="domob", application="app",
+                       password=pwd)
+    self.assertEqual (res, {
+      "valid": True,
+      "state": "valid",
+      "expiry": None,
+      "extra": extra,
+    })
+
+    # Valid without expiry signed with app-specific key.
+    pwd = self.createPassword ("domob", "app", self.addrApp, None, {})
+    res = self.getRpc ("verifyauth", name="domob", application="app",
+                       password=pwd)
+    self.assertEqual (res, {
+      "valid": True,
+      "state": "valid",
+      "expiry": None,
+      "extra": {},
+    })
+
+    # Valid with expiry.
+    pwd = self.createPassword ("domob", "app", self.addrGeneral, notExpired, {})
+    res = self.getRpc ("verifyauth", name="domob", application="app",
+                       password=pwd)
+    self.assertEqual (res, {
+      "valid": True,
+      "state": "valid",
+      "expiry": notExpired,
+      "extra": {},
+    })
+
+    # Empty application name does not work as general signer.
+    pwd = self.createPassword ("domob", "app", self.addrEmpty, notExpired, {})
+    res = self.getRpc ("verifyauth", name="domob", application="app",
+                       password=pwd)
+    self.assertEqual (res, {
+      "valid": False,
+      "state": "invalid-signature",
+      "expiry": notExpired,
+      "extra": {},
+    })
+
+    # Empty application name is fine with app-specific signer.
+    pwd = self.createPassword ("domob", "", self.addrEmpty, notExpired, {})
+    res = self.getRpc ("verifyauth", name="domob", application="",
+                       password=pwd)
+    self.assertEqual (res, {
+      "valid": True,
+      "state": "valid",
+      "expiry": notExpired,
+      "extra": {},
+    })
+
+    # Empty name is also fine.
+    pwd = self.createPassword ("", "app", self.addrGeneral, notExpired, {})
+    res = self.getRpc ("verifyauth", name="", application="app", password=pwd)
+    self.assertEqual (res, {
+      "valid": True,
+      "state": "valid",
+      "expiry": notExpired,
+      "extra": {},
+    })
 
 
 if __name__ == "__main__":

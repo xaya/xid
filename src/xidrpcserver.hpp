@@ -5,6 +5,7 @@
 #ifndef XID_XIDRPCSERVER_HPP
 #define XID_XIDRPCSERVER_HPP
 
+#include "rpc-stubs/xaya-ro-rpcclient.h"
 #include "rpc-stubs/xidrpcserverstub.h"
 
 #include "logic.hpp"
@@ -34,11 +35,14 @@ private:
   /** The game logic implementation.  */
   XidGame& logic;
 
+  /** "Read-only" Xaya RPC connection (for e.g. verifymessage).  */
+  XayaRoRpcClient& xayaRo;
+
 public:
 
-  explicit XidRpcServer (xaya::Game& g, XidGame& l,
+  explicit XidRpcServer (xaya::Game& g, XidGame& l, XayaRoRpcClient& xro,
                          jsonrpc::AbstractServerConnector& conn)
-    : XidRpcServerStub(conn), game(g), logic(l)
+    : XidRpcServerStub(conn), game(g), logic(l), xayaRo(xro)
   {}
 
   void stop () override;
@@ -52,6 +56,9 @@ public:
                               const std::string& name) override;
   std::string setauthsignature (const std::string& password,
                                 const std::string& signature) override;
+  Json::Value verifyauth (const std::string& application,
+                          const std::string& name,
+                          const std::string& password) override;
 
 };
 

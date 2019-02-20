@@ -89,7 +89,7 @@ XidRpcServer::getnamestate (const std::string& name)
 {
   LOG (INFO) << "RPC method called: getnamestate " << name;
   return logic.GetCustomStateData (game,
-    [this, name] (Database& db)
+    [&name] (Database& db)
       {
         return GetNameState (db, name);
       });
@@ -184,6 +184,116 @@ XidRpcServer::setauthsignature (const std::string& password,
   cred.SetSignature (signature);
 
   return cred.ToPassword ();
+}
+
+namespace
+{
+
+/**
+ * Returns true if the given address is authorised to sign for the given name
+ * and application.
+ */
+bool
+IsValidSigner (Database& db, const std::string& addr,
+               const std::string& name, const std::string& app)
+{
+  auto* stmt = db.PrepareStatement (R"(
+    SELECT `application`
+      FROM `signers`
+      WHERE `name` = ?1 AND `address` = ?2
+  )");
+  BindParameter (stmt, 1, name);
+  BindParameter (stmt, 2, addr);
+
+  while (true)
+    {
+      const int rc = sqlite3_step (stmt);
+      if (rc == SQLITE_DONE)
+        return false;
+      CHECK_EQ (rc, SQLITE_ROW);
+
+      /* If the application is NULL, we've found a global signer.  */
+      if (IsColumnNull (stmt, 0))
+        return true;
+
+      /* Otherwise, check if it matches the requested application.  */
+      if (GetColumnValue<std::string> (stmt, 0) == app)
+        return true;
+    }
+}
+
+} // anonymous namespace
+
+Json::Value
+XidRpcServer::verifyauth (const std::string& application,
+                          const std::string& name,
+                          const std::string& password)
+{
+  LOG (INFO)
+      << "RPC method called: verifyauth\n"
+      << "  name: " << name << "\n"
+      << "  application: " << application << "\n"
+      << "  password: " << password;
+  return logic.GetCustomStateData (game,
+    [this, &name, &application, &password] (Database& db)
+      {
+        Json::Value res(Json::objectValue);
+        res["valid"] = false;
+
+        Credentials cred(name, application);
+        if (!cred.FromPassword (password))
+          {
+            res["state"] = "malformed";
+            return res;
+          }
+
+        if (!cred.ValidateFormat ())
+          {
+            res["state"] = "invalid-data";
+            return res;
+          }
+
+        res["expiry"]
+            = cred.HasExpiry ()
+                ? static_cast<Json::Int64> (TimeToUnix (cred.GetExpiry ()))
+                : Json::Value ();
+
+        const auto& extraMap = cred.GetExtra ();
+        Json::Value extra(Json::objectValue);
+        for (const auto& entry : extraMap)
+          extra[entry.first] = entry.second;
+        CHECK_EQ (extraMap.size (), extra.size ());
+        res["extra"] = extra;
+
+        const std::string authMsg = cred.GetAuthMessage ();
+        const auto verifyResult = xayaRo.verifymessage ("", authMsg,
+                                                        cred.GetSignature ());
+        CHECK (verifyResult.isObject ());
+        if (!verifyResult["valid"].asBool ()
+              || !IsValidSigner (db, verifyResult["address"].asString (),
+                                 name, application))
+          {
+            VLOG (1) << "Failed signature verification: " << verifyResult;
+            res["state"] = "invalid-signature";
+            return res;
+          }
+
+        /* The check for being expired is the last thing done.  This ensures
+           that an "expired" state means that all else is good, and that the
+           credentials are really "ok except for expiry".  Together with the
+           returned "expiry" field, this allows client applications to
+           re-evaluate expiry if they want (e.g. if the current system time
+           may not be correct or applicable).  */
+        if (cred.IsExpired ())
+          {
+            res["state"] = "expired";
+            return res;
+          }
+
+        res["state"] = "valid";
+        res["valid"] = true;
+        return res;
+      });
 }
 
 } // namespace xid

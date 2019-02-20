@@ -41,5 +41,15 @@
         "signature": "signature"
       },
     "returns": "password"
+  },
+  {
+    "name": "verifyauth",
+    "params":
+      {
+        "name": "foobar",
+        "application": "app",
+        "password": "base64"
+      },
+    "returns": {}
   }
 ]
