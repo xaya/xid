@@ -11,6 +11,8 @@
 
 #include <xayagame/uint256.hpp>
 
+#include <jsonrpccpp/common/exception.h>
+
 #include <glog/logging.h>
 
 namespace xid
@@ -31,6 +33,10 @@ enum class ErrorCode
   /* Invalid values for arguments (e.g. passing a malformed JSON value for
      an object parameter or an out-of-range integer).  */
   INVALID_ARGUMENT = -1,
+  /* The Xaya wallet would be needed but is not enabled.  */
+  WALLET_NOT_ENABLED = -2,
+  /* The Xaya wallet is locked.  */
+  WALLET_LOCKED = -3,
 
   /* The provided data (name, applcation, extra) is invalid while constructing
      an auth message (not validating a password).  */
@@ -39,6 +45,8 @@ enum class ErrorCode
      a valid protocol buffer.  This is not thrown when validating a password,
      just when modifying it.  */
   AUTH_INVALID_PASSWORD = 2,
+  /* The Xaya wallet does not hold any key allowed to sign the credentials.  */
+  AUTH_NO_KEY = 3,
 
 };
 
@@ -53,6 +61,14 @@ ThrowJsonError (const ErrorCode code, const std::string& msg)
 }
 
 } // anonymous namespace
+
+void
+XidRpcServer::EnsureWalletAvailable () const
+{
+  if (xayaWallet == nullptr)
+    ThrowJsonError (ErrorCode::WALLET_NOT_ENABLED,
+                    "the Xaya wallet is not enabled, set --allow_wallet");
+}
 
 void
 XidRpcServer::stop ()
@@ -293,6 +309,109 @@ XidRpcServer::verifyauth (const std::string& application,
         res["state"] = "valid";
         res["valid"] = true;
         return res;
+      });
+}
+
+namespace
+{
+
+/**
+ * Tries to locate an address in the Xaya wallet which is allowed to sign
+ * on behalf of the given name and application.
+ */
+bool
+FindSignerAddress (Database& db, XayaWalletRpcClient& xayaWallet,
+                   const std::string& name, const std::string& application,
+                   std::string& addr)
+{
+  auto* stmt = db.PrepareStatement (R"(
+    SELECT `address`
+      FROM `signers`
+      WHERE `name` = ?1 AND (`application` IS NULL OR `application` = ?2)
+  )");
+  BindParameter (stmt, 1, name);
+  BindParameter (stmt, 2, application);
+
+  while (true)
+    {
+      const int rc = sqlite3_step (stmt);
+      if (rc == SQLITE_DONE)
+        return false;
+      CHECK_EQ (rc, SQLITE_ROW);
+
+      const std::string cur = GetColumnValue<std::string> (stmt, 0);
+      try
+        {
+          const Json::Value info = xayaWallet.getaddressinfo (cur);
+          if (info["ismine"].asBool ())
+            {
+              addr = cur;
+              return true;
+            }
+        }
+      catch (const jsonrpc::JsonRpcException& exc)
+        {
+          if (exc.GetCode () == -5)
+            {
+              /* Invalid address, ignore it in that case.  */
+              LOG (WARNING) << "Invalid address as signer key: " << cur;
+              continue;
+            }
+
+          LOG (FATAL) << "getaddressinfo " << cur << " failed: " << exc.what ();
+        }
+    }
+}
+
+} // anonymous namespace
+
+Json::Value
+XidRpcServer::authwithwallet (const std::string& application,
+                              const Json::Value& data,
+                              const std::string& name)
+{
+  LOG (INFO)
+      << "RPC method called: authwithwallet\n"
+      << "  name: " << name << "\n"
+      << "  application: " << application << "\n"
+      << "  data: " << data;
+
+  EnsureWalletAvailable ();
+
+  Credentials cred(name, application);
+  ApplyAuthDataJson (data, cred);
+
+  if (!cred.ValidateFormat ())
+    ThrowJsonError (ErrorCode::AUTH_INVALID_DATA,
+                    "the authentication data is invalid");
+
+  const std::string authMsg = cred.GetAuthMessage ();
+
+  return logic.GetCustomStateData (game,
+    [this, &name, &application, &cred, &authMsg] (Database& db)
+      {
+        std::string addr;
+        if (!FindSignerAddress (db, *xayaWallet, name, application, addr))
+          ThrowJsonError (ErrorCode::AUTH_NO_KEY,
+                          "no authorised key is in the wallet");
+
+        try
+          {
+            const std::string sgn = xayaWallet->signmessage (addr, authMsg);
+            cred.SetSignature (sgn);
+          }
+        catch (const jsonrpc::JsonRpcException& exc)
+          {
+            if (exc.GetCode () == -13)
+              ThrowJsonError (ErrorCode::WALLET_LOCKED,
+                              "the Xaya wallet is locked");
+
+            LOG (FATAL)
+                << "signmessage " << addr << "\n" << authMsg
+                << "\nfailed: " << exc.what ();
+          }
+
+        return cred.ToPassword ();
       });
 }
 

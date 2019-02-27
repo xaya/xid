@@ -5,6 +5,7 @@
 #include "config.h"
 
 #include "rpc-stubs/xaya-ro-rpcclient.h"
+#include "rpc-stubs/xaya-wallet-rpcclient.h"
 
 #include "logic.hpp"
 #include "xidrpcserver.hpp"
@@ -42,6 +43,9 @@ DEFINE_string (datadir, "",
                "base data directory for state data"
                " (will be extended by 'id' the chain)");
 
+DEFINE_bool (allow_wallet, false,
+             "whether to allow RPC methods that access the Xaya Core wallet");
+
 class XidInstanceFactory : public xaya::CustomisedInstanceFactory
 {
 
@@ -56,20 +60,32 @@ private:
   /** Read-only Xaya RPC connection for server.  */
   XayaRoRpcClient& xayaRo;
 
+  /** If set to non-null, enable the Xaya wallet on the RPC server.  */
+  XayaWalletRpcClient* xayaWallet = nullptr;
+
 public:
 
   explicit XidInstanceFactory (xid::XidGame& r, XayaRoRpcClient& xro)
     : rules(r), xayaRo(xro)
   {}
 
+  void
+  EnableWallet (XayaWalletRpcClient& xw)
+  {
+    xayaWallet = &xw;
+  }
+
   std::unique_ptr<xaya::RpcServerInterface>
   BuildRpcServer (xaya::Game& game,
                   jsonrpc::AbstractServerConnector& conn) override
   {
-    std::unique_ptr<xaya::RpcServerInterface> res;
-    res.reset (new xaya::WrappedRpcServer<xid::XidRpcServer> (
-        game, rules, xayaRo, conn));
-    return res;
+    using WrappedRpc = xaya::WrappedRpcServer<xid::XidRpcServer>;
+    auto rpc = std::make_unique<WrappedRpc> (game, rules, xayaRo, conn);
+
+    if (xayaWallet != nullptr)
+      rpc->Get ().EnableWallet (*xayaWallet);
+
+    return rpc;
   }
 
 };
@@ -116,8 +132,16 @@ main (int argc, char** argv)
   jsonrpc::HttpClient httpXaya(config.XayaRpcUrl);
   XayaRoRpcClient xayaRo(httpXaya, jsonrpc::JSONRPC_CLIENT_V1);
 
+  std::unique_ptr<XayaWalletRpcClient> xayaWallet;
+  if (FLAGS_allow_wallet)
+    xayaWallet
+        = std::make_unique<XayaWalletRpcClient> (httpXaya,
+                                                 jsonrpc::JSONRPC_CLIENT_V1);
+
   xid::XidGame rules;
   XidInstanceFactory instanceFact(rules, xayaRo);
+  if (xayaWallet != nullptr)
+    instanceFact.EnableWallet (*xayaWallet);
   config.InstanceFactory = &instanceFact;
 
   const int rc = xaya::SQLiteMain (config, "id", rules);

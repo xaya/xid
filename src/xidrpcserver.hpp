@@ -6,6 +6,7 @@
 #define XID_XIDRPCSERVER_HPP
 
 #include "rpc-stubs/xaya-ro-rpcclient.h"
+#include "rpc-stubs/xaya-wallet-rpcclient.h"
 #include "rpc-stubs/xidrpcserverstub.h"
 
 #include "logic.hpp"
@@ -38,12 +39,34 @@ private:
   /** "Read-only" Xaya RPC connection (for e.g. verifymessage).  */
   XayaRoRpcClient& xayaRo;
 
+  /**
+   * The RPC connection to Xaya Core that supports wallet-based functions.
+   * This is only set if the wallet is explicitly enabled when running xid
+   * (to prevent accidental access) and will be null otherwise.
+   */
+  XayaWalletRpcClient* xayaWallet = nullptr;
+
+  /**
+   * Checks if the Xaya wallet is available and throws a corresponding
+   * JSON-RPC error if not.
+   */
+  void EnsureWalletAvailable () const;
+
 public:
 
   explicit XidRpcServer (xaya::Game& g, XidGame& l, XayaRoRpcClient& xro,
                          jsonrpc::AbstractServerConnector& conn)
     : XidRpcServerStub(conn), game(g), logic(l), xayaRo(xro)
   {}
+
+  /**
+   * Enables support for RPC methods that require the Xaya wallet.
+   */
+  void
+  EnableWallet (XayaWalletRpcClient& xw)
+  {
+    xayaWallet = &xw;
+  }
 
   void stop () override;
   Json::Value getcurrentstate () override;
@@ -59,6 +82,9 @@ public:
   Json::Value verifyauth (const std::string& application,
                           const std::string& name,
                           const std::string& password) override;
+  Json::Value authwithwallet (const std::string& application,
+                              const Json::Value& data,
+                              const std::string& name) override;
 
 };
 
