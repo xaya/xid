@@ -107,6 +107,12 @@ main (int argc, char** argv)
   config.EnablePruning = FLAGS_enable_pruning;
   config.DataDirectory = FLAGS_datadir;
 
+  /* We need the extended verifymessage command in Xaya (with the ability
+     to recover the address from a signature).  This was introduced in
+     https://github.com/xaya/xaya/pull/85 and is available from 1.2.0
+     and 1.1.2.  */
+  config.MinXayaVersion = 1010200;
+
   jsonrpc::HttpClient httpXaya(config.XayaRpcUrl);
   XayaRoRpcClient xayaRo(httpXaya, jsonrpc::JSONRPC_CLIENT_V1);
 
