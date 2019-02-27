@@ -63,6 +63,8 @@ When run, the Xid daemon `xid` exposes a
 **[JSON-RPC 2.0](https://www.jsonrpc.org/)** interface
 over HTTP on a local port (the port number is specified in its invocation).
 
+All methods accept arguments in the **keyword-form**.
+
 ### Standard Methods from `libxayagame`
 
 Since Xid is based on
@@ -125,8 +127,114 @@ should be used, as they allow more efficient access to the required data.
 
 This method retrieves the data (if any) for **one specific name**.  The name
 in question has to be passed as a JSON string to the keyword argument `name`.
-Returned is the [state data for this name](#json-one-name) as JSON object.
+Returned is the [state data for this name](#json-one-name) in the `data` field
+of a JSON object otherwise like [`getcurrentstate`](#getcurrentstate).
 
-### Verification Methods
+### Authentication Credentials
 
-### Wallet Methods
+Xid has special RPC methods supporting its use for
+[user authentication](auth.md).  They are able to construct credentials,
+sign them and verify whether or not given credentials are valid.
+
+#### <a name="getauthmessage">`getauthmessage`</a>
+
+This method constructs an [authentication message](auth.md#auth-message)
+for given data.  It has to be passed `name` and `application` as strings,
+as well as additional data for construction of the authentication message in
+the `data` argument.  Its value has to be a JSON object of the following form:
+
+    {
+      "expiry": EXPIRY,
+      "extra":
+        {
+          KEY1: VALUE1,
+          KEY2: VALUE2,
+          ...
+        }
+    }
+
+`EXPIRY`, if set and not `null`, must be an integer that specifies the
+desired expiration time of the credentials as UNIX timestamp.  If it is
+left out or `null`, then the credentials will not expire.
+
+`extra` can be a dictionary holding `KEY`i to `VALUE`i mappings for the
+extra data that should be included in the credentials.
+
+On success, `getauthmessage` returns a JSON object like this:
+
+    {
+      "authmessage": AUTH-MESSAGE,
+      "password": PASSWORD
+    }
+
+Here, `AUTH-MESSAGE` is the constructed authentication message as a string.
+`PASSWORD` is the encoded password that holds the expiration and extra data,
+*but no signature yet* (and is thus not yet valid).
+[`setauthsignature`](#setauthsignature) can be used to add the signature
+in a second step.
+
+#### <a name="setauthsignature">`setauthsignature`</a>
+
+This method can be used to add in the signature for an already-constructed
+password (e.g. coming from [`getauthmessage`](#getauthmessage)).
+
+It expects two string arguments, `password` and `signature`.  It returns
+the amended password as string.
+
+#### `verifyauth`
+
+This method verifies whether or not given credentials are valid.  It accepts
+`name`, `application` and `password` as string arguments.
+
+Since the validity depends on the current game state, it returns a JSON
+object similar to [`getcurrentstate`](#getcurrentstate).  Instead of the
+`gamestate` field, it has the verification data in `data`.
+
+This verification result is a JSON object itself, of the following form:
+
+    {
+      "valid": VALID,
+      "state": STATE,
+      "expiry": EXPIRY,
+      "extra":
+        {
+          KEY1: VALUE1,
+          KEY2: VALUE2,
+          ...
+        }
+    }
+
+`VALID` is a boolean indicating whether or not the credentials are valid.  It is
+only true if everything is fine and the credentials should be accepted by
+the client application (subject to additional, application-specific checks).
+
+The encoded expiry is returned in `EXPIRY` as a UNIX timestamp or `null` if
+the credentials do not expire.  Any extra data present in the credentials is
+returned in the `extra` dictionary.
+
+`STATE`, finally, is a string giving more details about the validation and
+the reason why credentials may not be valid.  It can hold any of the following
+values:
+
+- **`malformed`** indicates that the password string could not be decoded
+  into an `AuthData` protocol buffer.
+- **`invalid-data`** means that the protocol buffer or other fields (e.g.
+  application name) have an invalid format.
+- **`invalid-signature`** means that the signature was invalid or could not
+  be tied to a signer key of the name and application.
+- **`expired`** means that the credentials are valid but expired at the
+  current system time.
+- **`valid`** is returned if and only if `valid` is set to `true`.
+
+#### `authwithwallet`
+
+This method constructs *and signs* authentication credentials using
+the wallet of the attached Xaya Core daemon.  To use it, Xid has to
+be started with `--allow_wallet`.
+
+The `name`, `application` and `data` have to be passed as arguments.
+They are defined as for [`getauthmessage`](#getauthmessage).
+
+Returned is a JSON object similar to [`getcurrentstate`](#getcurrentstate).
+In its `data` field, the constructed and fully signed password string
+is returned.
