@@ -6,6 +6,7 @@ AC_CONFIG_HEADERS([config.h])
 
 AC_PROG_CXX
 AM_PROG_AR
+AM_PATH_PYTHON
 
 LT_INIT
 
@@ -42,6 +43,7 @@ PKG_CHECK_MODULES([PROTOBUF], [protobuf])
 AC_CONFIG_FILES([
   Makefile \
   auth/Makefile \
+  ejabberd/Makefile \
   gametest/Makefile \
   src/Makefile
 ])
