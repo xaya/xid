@@ -5,6 +5,8 @@
 #ifndef XID_XIDRPCSERVER_HPP
 #define XID_XIDRPCSERVER_HPP
 
+#include "rpc-stubs/xaya-ro-rpcclient.h"
+#include "rpc-stubs/xaya-wallet-rpcclient.h"
 #include "rpc-stubs/xidrpcserverstub.h"
 
 #include "logic.hpp"
@@ -34,18 +36,55 @@ private:
   /** The game logic implementation.  */
   XidGame& logic;
 
+  /** "Read-only" Xaya RPC connection (for e.g. verifymessage).  */
+  XayaRoRpcClient& xayaRo;
+
+  /**
+   * The RPC connection to Xaya Core that supports wallet-based functions.
+   * This is only set if the wallet is explicitly enabled when running xid
+   * (to prevent accidental access) and will be null otherwise.
+   */
+  XayaWalletRpcClient* xayaWallet = nullptr;
+
+  /**
+   * Checks if the Xaya wallet is available and throws a corresponding
+   * JSON-RPC error if not.
+   */
+  void EnsureWalletAvailable () const;
+
 public:
 
-  explicit XidRpcServer (xaya::Game& g, XidGame& l,
+  explicit XidRpcServer (xaya::Game& g, XidGame& l, XayaRoRpcClient& xro,
                          jsonrpc::AbstractServerConnector& conn)
-    : XidRpcServerStub(conn), game(g), logic(l)
+    : XidRpcServerStub(conn), game(g), logic(l), xayaRo(xro)
   {}
 
-  virtual void stop () override;
-  virtual Json::Value getcurrentstate () override;
-  virtual Json::Value waitforchange () override;
+  /**
+   * Enables support for RPC methods that require the Xaya wallet.
+   */
+  void
+  EnableWallet (XayaWalletRpcClient& xw)
+  {
+    xayaWallet = &xw;
+  }
 
-  virtual Json::Value getnamestate (const std::string& name) override;
+  void stop () override;
+  Json::Value getcurrentstate () override;
+  Json::Value waitforchange () override;
+
+  Json::Value getnamestate (const std::string& name) override;
+
+  Json::Value getauthmessage (const std::string& application,
+                              const Json::Value& data,
+                              const std::string& name) override;
+  std::string setauthsignature (const std::string& password,
+                                const std::string& signature) override;
+  Json::Value verifyauth (const std::string& application,
+                          const std::string& name,
+                          const std::string& password) override;
+  Json::Value authwithwallet (const std::string& application,
+                              const Json::Value& data,
+                              const std::string& name) override;
 
 };
 

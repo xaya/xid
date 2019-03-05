@@ -2,6 +2,9 @@ TEST_LIBRARY = \
   xidtest.py
 
 REGTESTS = \
+  allow_wallet.py \
+  auth.py \
+  authwithwallet.py \
   getnamestate.py \
   signer_update.py
 

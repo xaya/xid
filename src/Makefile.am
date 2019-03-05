@@ -2,10 +2,14 @@ noinst_LTLIBRARIES = libxid.la
 bin_PROGRAMS = xid
 
 EXTRA_DIST = \
+  rpc-stubs/xaya-readonly.json \
+  rpc-stubs/xaya-wallet.json \
   rpc-stubs/xid.json \
   schema.sql schema_head.cpp schema_tail.cpp
 
 RPC_STUBS = \
+  rpc-stubs/xaya-ro-rpcclient.h \
+  rpc-stubs/xaya-wallet-rpcclient.h \
   rpc-stubs/xidrpcserverstub.h
 BUILT_SOURCES = $(RPC_STUBS)
 CLEANFILES = $(RPC_STUBS) schema.cpp
@@ -26,12 +30,14 @@ libxidheaders = \
   schema.hpp
 
 xid_CXXFLAGS = \
+  -I$(top_srcdir) \
   $(XAYAGAME_CFLAGS) \
-  $(JSON_CFLAGS) $(GLOG_CFLAGS) $(GFLAGS_CFLAGS)
+  $(JSON_CFLAGS) $(PROTOBUF_CFLAGS) $(GLOG_CFLAGS) $(GFLAGS_CFLAGS)
 xid_LDADD = \
   $(builddir)/libxid.la \
+  $(top_builddir)/auth/libxidauth.la \
   $(XAYAGAME_LIBS) \
-  $(JSON_LIBS) $(GLOG_LIBS) $(GFLAGS_LIBS)
+  $(JSON_LIBS) $(PROTOBUF_LIBS) $(GLOG_LIBS) $(GFLAGS_LIBS)
 xid_SOURCES = main.cpp \
   logic.cpp \
   xidrpcserver.cpp
@@ -39,6 +45,8 @@ xidheaders = \
   logic.hpp \
   xidrpcserver.hpp \
   \
+  rpc-stubs/xaya-ro-rpcclient.h \
+  rpc-stubs/xaya-wallet-rpcclient.h \
   rpc-stubs/xidrpcserverstub.h
 
 noinst_HEADERS = $(libxidheaders) $(xidheaders)
@@ -67,5 +75,9 @@ check_HEADERS = \
 schema.cpp: schema_head.cpp schema.sql schema_tail.cpp
 	cat $^ >$@
 
+rpc-stubs/xaya-ro-rpcclient.h: $(srcdir)/rpc-stubs/xaya-readonly.json
+	jsonrpcstub "$<" --cpp-client=XayaRoRpcClient --cpp-client-file="$@"
+rpc-stubs/xaya-wallet-rpcclient.h: $(srcdir)/rpc-stubs/xaya-wallet.json
+	jsonrpcstub "$<" --cpp-client=XayaWalletRpcClient --cpp-client-file="$@"
 rpc-stubs/xidrpcserverstub.h: $(srcdir)/rpc-stubs/xid.json
 	jsonrpcstub "$<" --cpp-server=XidRpcServerStub --cpp-server-file="$@"

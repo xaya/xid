@@ -4,6 +4,9 @@
 
 #include "config.h"
 
+#include "rpc-stubs/xaya-ro-rpcclient.h"
+#include "rpc-stubs/xaya-wallet-rpcclient.h"
+
 #include "logic.hpp"
 #include "xidrpcserver.hpp"
 
@@ -13,6 +16,10 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
+#include <google/protobuf/stubs/common.h>
+
+#include <jsonrpccpp/client.h>
+#include <jsonrpccpp/client/connectors/httpclient.h>
 #include <jsonrpccpp/server/connectors/httpserver.h>
 
 #include <cstdlib>
@@ -36,6 +43,9 @@ DEFINE_string (datadir, "",
                "base data directory for state data"
                " (will be extended by 'id' the chain)");
 
+DEFINE_bool (allow_wallet, false,
+             "whether to allow RPC methods that access the Xaya Core wallet");
+
 class XidInstanceFactory : public xaya::CustomisedInstanceFactory
 {
 
@@ -47,20 +57,35 @@ private:
    */
   xid::XidGame& rules;
 
+  /** Read-only Xaya RPC connection for server.  */
+  XayaRoRpcClient& xayaRo;
+
+  /** If set to non-null, enable the Xaya wallet on the RPC server.  */
+  XayaWalletRpcClient* xayaWallet = nullptr;
+
 public:
 
-  explicit XidInstanceFactory (xid::XidGame& r)
-    : rules(r)
+  explicit XidInstanceFactory (xid::XidGame& r, XayaRoRpcClient& xro)
+    : rules(r), xayaRo(xro)
   {}
+
+  void
+  EnableWallet (XayaWalletRpcClient& xw)
+  {
+    xayaWallet = &xw;
+  }
 
   std::unique_ptr<xaya::RpcServerInterface>
   BuildRpcServer (xaya::Game& game,
                   jsonrpc::AbstractServerConnector& conn) override
   {
-    std::unique_ptr<xaya::RpcServerInterface> res;
-    res.reset (new xaya::WrappedRpcServer<xid::XidRpcServer> (game, rules,
-                                                              conn));
-    return res;
+    using WrappedRpc = xaya::WrappedRpcServer<xid::XidRpcServer>;
+    auto rpc = std::make_unique<WrappedRpc> (game, rules, xayaRo, conn);
+
+    if (xayaWallet != nullptr)
+      rpc->Get ().EnableWallet (*xayaWallet);
+
+    return rpc;
   }
 
 };
@@ -71,6 +96,7 @@ int
 main (int argc, char** argv)
 {
   google::InitGoogleLogging (argv[0]);
+  GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   gflags::SetUsageMessage ("Run Xaya ID daemon");
   gflags::SetVersionString (PACKAGE_VERSION);
@@ -97,9 +123,29 @@ main (int argc, char** argv)
   config.EnablePruning = FLAGS_enable_pruning;
   config.DataDirectory = FLAGS_datadir;
 
+  /* We need the extended verifymessage command in Xaya (with the ability
+     to recover the address from a signature).  This was introduced in
+     https://github.com/xaya/xaya/pull/85 and is available from 1.2.0
+     and 1.1.2.  */
+  config.MinXayaVersion = 1010200;
+
+  jsonrpc::HttpClient httpXaya(config.XayaRpcUrl);
+  XayaRoRpcClient xayaRo(httpXaya, jsonrpc::JSONRPC_CLIENT_V1);
+
+  std::unique_ptr<XayaWalletRpcClient> xayaWallet;
+  if (FLAGS_allow_wallet)
+    xayaWallet
+        = std::make_unique<XayaWalletRpcClient> (httpXaya,
+                                                 jsonrpc::JSONRPC_CLIENT_V1);
+
   xid::XidGame rules;
-  XidInstanceFactory instanceFact(rules);
+  XidInstanceFactory instanceFact(rules, xayaRo);
+  if (xayaWallet != nullptr)
+    instanceFact.EnableWallet (*xayaWallet);
   config.InstanceFactory = &instanceFact;
 
-  return xaya::SQLiteMain (config, "id", rules);
+  const int rc = xaya::SQLiteMain (config, "id", rules);
+
+  google::protobuf::ShutdownProtobufLibrary ();
+  return rc;
 }

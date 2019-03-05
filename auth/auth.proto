@@ -1,0 +1,35 @@
+// Copyright (C) 2019 The Xaya developers
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
+syntax = "proto2";
+
+package xid;
+
+/**
+ * The data for authenticating a user with Xid, not including the username
+ * and application name.  This is what the "password" encodes.
+ */
+message AuthData
+{
+
+  /**
+   * The signature (as per Xaya Core's signmessage) of the authentication
+   * message.  The signmessage output itself is base64 encoded; the data
+   * here are the raw bytes.
+   */
+  optional bytes signature_bytes = 1;
+
+  /**
+   * The Unix timestamp at which the authentication credentials expire.  If this
+   * is not present, then they do not expire.
+   */
+  optional uint64 expiry = 2;
+
+  /**
+   * Extra data for application-specific usage.  Keys and values must be strings
+   * that only contain alphanumeric characters and ".".
+   */
+  map<string, string> extra = 3;
+
+}

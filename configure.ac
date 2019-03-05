@@ -27,6 +27,7 @@ PKG_PROG_PKG_CONFIG
 PKG_CHECK_MODULES([XAYAGAME], [libxayagame])
 PKG_CHECK_MODULES([SQLITE3], [sqlite3])
 PKG_CHECK_MODULES([JSON], [jsoncpp])
+PKG_CHECK_MODULES([OPENSSL], [openssl])
 PKG_CHECK_MODULES([GLOG], [libglog])
 PKG_CHECK_MODULES([GTEST], [gtest])
 PKG_CHECK_MODULES([GTEST_MAIN], [gtest_main])
@@ -36,9 +37,11 @@ PKG_CHECK_MODULES([GTEST_MAIN], [gtest_main])
 # https://bugs.freedesktop.org/show_bug.cgi?id=19541.
 PKG_CONFIG="${PKG_CONFIG} --static"
 PKG_CHECK_MODULES([GFLAGS], [gflags])
+PKG_CHECK_MODULES([PROTOBUF], [protobuf])
 
 AC_CONFIG_FILES([
   Makefile \
+  auth/Makefile \
   gametest/Makefile \
   src/Makefile
 ])

@@ -21,5 +21,45 @@
         "name": "foobar"
       },
     "returns": {}
+  },
+
+  {
+    "name": "getauthmessage",
+    "params":
+      {
+        "name": "foobar",
+        "application": "app",
+        "data": {}
+      },
+    "returns": {}
+  },
+  {
+    "name": "setauthsignature",
+    "params":
+      {
+        "password": "base64",
+        "signature": "signature"
+      },
+    "returns": "password"
+  },
+  {
+    "name": "verifyauth",
+    "params":
+      {
+        "name": "foobar",
+        "application": "app",
+        "password": "base64"
+      },
+    "returns": {}
+  },
+  {
+    "name": "authwithwallet",
+    "params":
+      {
+        "name": "foobar",
+        "application": "app",
+        "data": {}
+      },
+    "returns": {}
   }
 ]

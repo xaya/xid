@@ -1,0 +1,19 @@
+[
+  {
+    "name": "getaddressinfo",
+    "params":
+      {
+        "address": "addr"
+      },
+    "returns": {}
+  },
+  {
+    "name": "signmessage",
+    "params":
+      {
+        "address": "addr",
+        "message": "message"
+      },
+    "returns": "signature"
+  }
+]
