@@ -26,34 +26,10 @@ class XidTest (XayaGameTest):
   def getRpc (self, method, **kwargs):
     """
     Calls the given "read-type" RPC method on the game daemon and returns
-    the "data" field.  This also makes sure to wait until the game is
-    synced to the current best block, just like getGameState() does.
+    the "data" field.
     """
 
-    # Ensure we are synced.
-    self.getGameState ()
-
-    # Actually call the method.
-    fcn = getattr (self.rpc.game, method)
-    res = fcn (**kwargs)
-
-    # Verify that we are really synced.
-    self.assertEqual (res["state"], "up-to-date")
-    self.assertEqual (res["blockhash"], self.rpc.xaya.getbestblockhash ())
-
-    # Extract data member.
-    return res["data"]
-
-  def assertEqual (self, a, b):
-    """
-    Asserts that two values are equal, logging them if not.
-    """
-
-    if a == b:
-      return
-
-    self.log.error ("The value of:\n%s\n\nis not equal to:\n%s" % (a, b))
-    raise AssertionError ("%s != %s" % (a, b))
+    return self.getCustomState ("data", method, **kwargs)
 
   def expectError (self, code, msgRegExp, method, *args, **kwargs):
     """
