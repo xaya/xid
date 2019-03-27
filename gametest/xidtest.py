@@ -6,9 +6,6 @@ from xayagametest.testcase import XayaGameTest
 
 import os
 import os.path
-import re
-
-from jsonrpclib import ProtocolError
 
 
 class XidTest (XayaGameTest):
@@ -30,21 +27,3 @@ class XidTest (XayaGameTest):
     """
 
     return self.getCustomState ("data", method, **kwargs)
-
-  def expectError (self, code, msgRegExp, method, *args, **kwargs):
-    """
-    Calls the method object with the given arguments, and expects that
-    an RPC error is raised matching the code and message.
-    """
-
-    try:
-      method (*args, **kwargs)
-      self.log.error ("Expected RPC error with code=%d and message %s"
-                        % (code, msgRegExp))
-      raise AssertionError ("expected RPC error was not raised")
-    except ProtocolError as exc:
-      self.log.info ("Caught expected RPC error: %s" % exc)
-      (c, m) = exc.args[0]
-      self.assertEqual (c, code)
-      msgPattern = re.compile (msgRegExp)
-      assert msgPattern.match (m)
