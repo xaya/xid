@@ -4,8 +4,9 @@
 
 #include "credentials.hpp"
 
-#include "base64.hpp"
 #include "time.hpp"
+
+#include <xayautil/base64.hpp>
 
 #include <glog/logging.h>
 
@@ -18,7 +19,7 @@ bool
 Credentials::FromPassword (const std::string& pwd)
 {
   std::string decoded;
-  if (!DecodeBase64 (pwd, decoded))
+  if (!xaya::DecodeBase64 (pwd, decoded))
     return false;
 
   if (!data.ParseFromString (decoded))
@@ -38,7 +39,7 @@ Credentials::ToPassword () const
   std::string rawData;
   CHECK (data.SerializeToString (&rawData));
 
-  return EncodeBase64 (rawData);
+  return xaya::EncodeBase64 (rawData);
 }
 
 namespace
@@ -145,13 +146,13 @@ Credentials::IsExpired () const
 std::string
 Credentials::GetSignature () const
 {
-  return EncodeBase64 (data.signature_bytes ());
+  return xaya::EncodeBase64 (data.signature_bytes ());
 }
 
 void
 Credentials::SetSignature (const std::string& sgn)
 {
-  CHECK (DecodeBase64 (sgn, *data.mutable_signature_bytes ()))
+  CHECK (xaya::DecodeBase64 (sgn, *data.mutable_signature_bytes ()))
       << "The signature is not valid Base64: " << sgn;
 }
 

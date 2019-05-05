@@ -4,7 +4,7 @@
 
 #include "credentials.hpp"
 
-#include "base64.hpp"
+#include <xayautil/base64.hpp>
 
 #include <gtest/gtest.h>
 
@@ -20,7 +20,7 @@ using CredentialsPasswordTests = testing::Test;
 TEST_F (CredentialsPasswordTests, Roundtrip)
 {
   Credentials c("domob", "app");
-  const std::string sgn = EncodeBase64 ("signature");
+  const std::string sgn = xaya::EncodeBase64 ("signature");
   c.SetSignature (sgn);
   c.SetExpiry (1234);
   c.AddExtra ("foo", "bar");
@@ -122,7 +122,7 @@ using CredentialsAuthMessageTests = testing::Test;
 TEST_F (CredentialsAuthMessageTests, Basic)
 {
   Credentials c(u8"äöü foobar", "app");
-  c.SetSignature (EncodeBase64 ("signature"));
+  c.SetSignature (xaya::EncodeBase64 ("signature"));
   EXPECT_EQ (c.GetAuthMessage (),
 u8R"(Xid login
 äöü foobar
@@ -200,11 +200,11 @@ TEST_F (CredentialsAccessorsTests, Signature)
   Credentials c("domob", "app");
   EXPECT_EQ (c.GetSignature (), "");
 
-  const std::string sgn1 = EncodeBase64 ("foo");
+  const std::string sgn1 = xaya::EncodeBase64 ("foo");
   c.SetSignature (sgn1);
   EXPECT_EQ (c.GetSignature (), sgn1);
 
-  const std::string sgn2 = EncodeBase64 ("bar");
+  const std::string sgn2 = xaya::EncodeBase64 ("bar");
   c.SetSignature (sgn2);
   EXPECT_EQ (c.GetSignature (), sgn2);
 }

@@ -7,17 +7,15 @@ BUILT_SOURCES = auth.pb.h
 CLEANFILES = auth.pb.h auth.pb.cc
 
 libxidauth_la_CXXFLAGS = \
-  $(OPENSSL_CFLAGS) $(PROTOBUF_CFLAGS) $(GLOG_CFLAGS)
+  $(XAYAUTIL_CFLAGS) $(PROTOBUF_CFLAGS) $(GLOG_CFLAGS)
 libxidauth_la_LIBADD = \
-  $(OPENSSL_LIBS) $(PROTOBUF_LIBS) $(GLOG_LIBS)
+  $(XAYAUTIL_LIBS) $(PROTOBUF_LIBS) $(GLOG_LIBS)
 libxidauth_la_SOURCES = \
-  base64.cpp \
   credentials.cpp \
   time.cpp \
   \
   auth.pb.cc
 xidauth_HEADERS = \
-  base64.hpp \
   credentials.hpp \
   time.hpp \
   \
@@ -28,13 +26,12 @@ TESTS = tests
 
 tests_CXXFLAGS = \
   $(GTEST_MAIN_CFLAGS) \
-  $(OPENSSL_CFLAGS) $(PROTOBUF_CFLAGS) $(GLOG_CFLAGS)
+  $(XAYAUTIL_CFLAGS) $(PROTOBUF_CFLAGS) $(GLOG_CFLAGS)
 tests_LDADD = \
   $(builddir)/libxidauth.la \
   $(GTEST_MAIN_LIBS) \
-  $(OPENSSL_LIBS) $(PROTOBUF_LIBS) $(GLOG_LIBS)
+  $(XAYAUTIL_LIBS) $(PROTOBUF_LIBS) $(GLOG_LIBS)
 tests_SOURCES = \
-  base64_tests.cpp \
   credentials_tests.cpp \
   time_tests.cpp
 

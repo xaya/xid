@@ -29,12 +29,12 @@ libxidheaders = \
 
 xid_CXXFLAGS = \
   -I$(top_srcdir) \
-  $(XAYAGAME_CFLAGS) \
+  $(XAYAUTIL_CFLAGS) $(XAYAGAME_CFLAGS) \
   $(JSON_CFLAGS) $(PROTOBUF_CFLAGS) $(GLOG_CFLAGS) $(GFLAGS_CFLAGS)
 xid_LDADD = \
   $(builddir)/libxid.la \
   $(top_builddir)/auth/libxidauth.la \
-  $(XAYAGAME_LIBS) \
+  $(XAYAUTIL_LIBS) $(XAYAGAME_LIBS) \
   $(JSON_LIBS) $(PROTOBUF_LIBS) $(GLOG_LIBS) $(GFLAGS_LIBS)
 xid_SOURCES = main.cpp \
   logic.cpp \
