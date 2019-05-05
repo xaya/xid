@@ -8,6 +8,8 @@
 #include "moveprocessor.hpp"
 #include "schema.hpp"
 
+#include <xayagame/signatures.hpp>
+
 #include <glog/logging.h>
 
 namespace xid
@@ -97,6 +99,12 @@ XidGame::GetStateAsJson (sqlite3* db)
 {
   SQLiteDatabase dbObj(*this);
   return GetFullState (dbObj);
+}
+
+std::string
+XidGame::VerifyMessage (const std::string& msg, const std::string& sgn)
+{
+  return xaya::VerifyMessage (GetXayaRpc (), msg, sgn);
 }
 
 Json::Value

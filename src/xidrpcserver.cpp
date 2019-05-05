@@ -282,14 +282,11 @@ XidRpcServer::verifyauth (const std::string& application,
         res["extra"] = extra;
 
         const std::string authMsg = cred.GetAuthMessage ();
-        const auto verifyResult = xayaRo.verifymessage ("", authMsg,
-                                                        cred.GetSignature ());
-        CHECK (verifyResult.isObject ());
-        if (!verifyResult["valid"].asBool ()
-              || !IsValidSigner (db, verifyResult["address"].asString (),
-                                 name, application))
+        const std::string sgnAddr = logic.VerifyMessage (authMsg,
+                                                         cred.GetSignature ());
+        if (!IsValidSigner (db, sgnAddr, name, application))
           {
-            VLOG (1) << "Failed signature verification: " << verifyResult;
+            VLOG (1) << "Not a valid signer address: " << sgnAddr;
             res["state"] = "invalid-signature";
             return res;
           }

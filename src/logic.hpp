@@ -53,6 +53,12 @@ public:
   void operator= (const XidGame&) = delete;
 
   /**
+   * Exposes xaya::VerifyMessage with the configured RPC connection.  This is
+   * used by the verifyauth RPC call.
+   */
+  std::string VerifyMessage (const std::string& msg, const std::string& sgn);
+
+  /**
    * Returns custom game-state data as JSON.  The provided callback is invoked
    * with a Database instance to retrieve the "main" state data that is returned
    * in the JSON "data" field.

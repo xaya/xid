@@ -4,7 +4,6 @@
 
 #include "config.h"
 
-#include "rpc-stubs/xaya-ro-rpcclient.h"
 #include "rpc-stubs/xaya-wallet-rpcclient.h"
 
 #include "logic.hpp"
@@ -57,16 +56,13 @@ private:
    */
   xid::XidGame& rules;
 
-  /** Read-only Xaya RPC connection for server.  */
-  XayaRoRpcClient& xayaRo;
-
   /** If set to non-null, enable the Xaya wallet on the RPC server.  */
   XayaWalletRpcClient* xayaWallet = nullptr;
 
 public:
 
-  explicit XidInstanceFactory (xid::XidGame& r, XayaRoRpcClient& xro)
-    : rules(r), xayaRo(xro)
+  explicit XidInstanceFactory (xid::XidGame& r)
+    : rules(r)
   {}
 
   void
@@ -80,7 +76,7 @@ public:
                   jsonrpc::AbstractServerConnector& conn) override
   {
     using WrappedRpc = xaya::WrappedRpcServer<xid::XidRpcServer>;
-    auto rpc = std::make_unique<WrappedRpc> (game, rules, xayaRo, conn);
+    auto rpc = std::make_unique<WrappedRpc> (game, rules, conn);
 
     if (xayaWallet != nullptr)
       rpc->Get ().EnableWallet (*xayaWallet);
@@ -123,15 +119,7 @@ main (int argc, char** argv)
   config.EnablePruning = FLAGS_enable_pruning;
   config.DataDirectory = FLAGS_datadir;
 
-  /* We need the extended verifymessage command in Xaya (with the ability
-     to recover the address from a signature).  This was introduced in
-     https://github.com/xaya/xaya/pull/85 and is available from 1.2.0
-     and 1.1.2.  */
-  config.MinXayaVersion = 1010200;
-
   jsonrpc::HttpClient httpXaya(config.XayaRpcUrl);
-  XayaRoRpcClient xayaRo(httpXaya, jsonrpc::JSONRPC_CLIENT_V1);
-
   std::unique_ptr<XayaWalletRpcClient> xayaWallet;
   if (FLAGS_allow_wallet)
     xayaWallet
@@ -139,7 +127,7 @@ main (int argc, char** argv)
                                                  jsonrpc::JSONRPC_CLIENT_V1);
 
   xid::XidGame rules;
-  XidInstanceFactory instanceFact(rules, xayaRo);
+  XidInstanceFactory instanceFact(rules);
   if (xayaWallet != nullptr)
     instanceFact.EnableWallet (*xayaWallet);
   config.InstanceFactory = &instanceFact;

@@ -5,7 +5,6 @@
 #ifndef XID_XIDRPCSERVER_HPP
 #define XID_XIDRPCSERVER_HPP
 
-#include "rpc-stubs/xaya-ro-rpcclient.h"
 #include "rpc-stubs/xaya-wallet-rpcclient.h"
 #include "rpc-stubs/xidrpcserverstub.h"
 
@@ -36,9 +35,6 @@ private:
   /** The game logic implementation.  */
   XidGame& logic;
 
-  /** "Read-only" Xaya RPC connection (for e.g. verifymessage).  */
-  XayaRoRpcClient& xayaRo;
-
   /**
    * The RPC connection to Xaya Core that supports wallet-based functions.
    * This is only set if the wallet is explicitly enabled when running xid
@@ -54,9 +50,9 @@ private:
 
 public:
 
-  explicit XidRpcServer (xaya::Game& g, XidGame& l, XayaRoRpcClient& xro,
+  explicit XidRpcServer (xaya::Game& g, XidGame& l,
                          jsonrpc::AbstractServerConnector& conn)
-    : XidRpcServerStub(conn), game(g), logic(l), xayaRo(xro)
+    : XidRpcServerStub(conn), game(g), logic(l)
   {}
 
   /**
