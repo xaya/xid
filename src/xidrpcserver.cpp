@@ -9,7 +9,7 @@
 #include "auth/credentials.hpp"
 #include "auth/time.hpp"
 
-#include <xayagame/uint256.hpp>
+#include <xayautil/uint256.hpp>
 
 #include <jsonrpccpp/common/exception.h>
 
