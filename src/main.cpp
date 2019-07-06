@@ -4,13 +4,12 @@
 
 #include "config.h"
 
-#include "rpc-stubs/xaya-wallet-rpcclient.h"
-
 #include "logic.hpp"
 #include "xidrpcserver.hpp"
 
 #include <xayagame/defaultmain.hpp>
 #include <xayagame/game.hpp>
+#include <xayagame/rpc-stubs/xayawalletrpcclient.h>
 
 #include <gflags/gflags.h>
 #include <glog/logging.h>

@@ -5,12 +5,12 @@
 #ifndef XID_XIDRPCSERVER_HPP
 #define XID_XIDRPCSERVER_HPP
 
-#include "rpc-stubs/xaya-wallet-rpcclient.h"
 #include "rpc-stubs/xidrpcserverstub.h"
 
 #include "logic.hpp"
 
 #include <xayagame/game.hpp>
+#include <xayagame/rpc-stubs/xayawalletrpcclient.h>
 
 #include <json/json.h>
 #include <jsonrpccpp/server.h>
