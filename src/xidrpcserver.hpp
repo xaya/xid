@@ -66,7 +66,7 @@ public:
 
   void stop () override;
   Json::Value getcurrentstate () override;
-  Json::Value waitforchange () override;
+  Json::Value waitforchange (const std::string& knownBlock) override;
 
   Json::Value getnamestate (const std::string& name) override;
 

@@ -9,7 +9,7 @@
 #include "auth/credentials.hpp"
 #include "auth/time.hpp"
 
-#include <xayautil/uint256.hpp>
+#include <xayagame/gamerpcserver.hpp>
 
 #include <jsonrpccpp/common/exception.h>
 
@@ -85,19 +85,10 @@ XidRpcServer::getcurrentstate ()
 }
 
 Json::Value
-XidRpcServer::waitforchange ()
+XidRpcServer::waitforchange (const std::string& knownBlock)
 {
-  LOG (INFO) << "RPC method called: waitforchange";
-
-  xaya::uint256 block;
-  game.WaitForChange (&block);
-
-  /* If there is no best block so far, return JSON null.  */
-  if (block.IsNull ())
-    return Json::Value ();
-
-  /* Otherwise, return the block hash.  */
-  return block.ToHex ();
+  LOG (INFO) << "RPC method called: waitforchange " << knownBlock;
+  return xaya::GameRpcServer::DefaultWaitForChange (game, knownBlock);
 }
 
 Json::Value
