@@ -84,7 +84,7 @@ XidRpcServer::getcurrentstate ()
   return game.GetCurrentJsonState ();
 }
 
-Json::Value
+std::string
 XidRpcServer::waitforchange (const std::string& knownBlock)
 {
   LOG (INFO) << "RPC method called: waitforchange " << knownBlock;
