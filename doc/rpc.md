@@ -1,12 +1,12 @@
-# Xid's RPC Interface
+# XID's RPC Interface
 
-This document describes the [JSON format](#json) of the Xid state
+This document describes the [JSON format](#json) of the XID state
 that is used in its RPC interface, as well as the available
 [RPC methods](#rpc) themselves.
 
 ## <a id="json">JSON Format of the Game State</a>
 
-For communication with the Xid daemon, all data is encoded
+For communication with the XID daemon, all data is encoded
 in the [JSON format](https://json.org/).
 
 ### <a id="json-one-name">Data for Names</a>
@@ -25,7 +25,13 @@ following format:
             "addresses": [ADDR1, ADDR2, ...]
           },
           ...
-        ]
+        ],
+      "addresses":
+        {
+          CRYPTO1: CRYPTOADDR1,
+          CRYPTO2: CRYPTOADDR2,
+          ...
+        },
     }
 
 In particular, the `signers` field holds information about registered
@@ -35,6 +41,12 @@ Application-specific signers are given in objects with the application specified
 as a string (which may be `""`).
 All `GLOBAL`n and `ADDR`n signer addresses are XAYA addresses encoded as
 strings.
+
+The `addresses` field holds crypto addresses that the user has associated
+for other coins and tokens.  Each `CRYPTO`n is a string that identifies the
+coin/token (e.g. `btc`), with the `CRYPTOADDR`n being the corresponding address
+also as a string.  The individual keys and formats for addresses are not
+defined (or interpreted) further by XID itself.
 
 ### <a id="json-full">Full Game State</a>
 
@@ -59,7 +71,7 @@ The corresponding `DATA`n values are JSON objects with the
 
 ## <a id="rpc">RPC Methods</a>
 
-When run, the Xid daemon `xid` exposes a
+When run, the XID daemon `xid` exposes a
 **[JSON-RPC 2.0](https://www.jsonrpc.org/)** interface
 over HTTP on a local port (the port number is specified in its invocation).
 
@@ -67,7 +79,7 @@ All methods accept arguments in the **keyword-form**.
 
 ### Standard Methods from `libxayagame`
 
-Since Xid is based on
+Since XID is based on
 [`libxayagame`](https://github.com/xaya/libxayagame),
 it has the standard methods from its
 [`GameRpcServer`](https://github.com/xaya/libxayagame/blob/master/xayagame/gamerpcserver.hpp).
@@ -75,9 +87,9 @@ Those methods can be used for very basic operations.
 
 #### <a id="getcurrentstate">`getcurrentstate`</a>
 
-This method retrieves information about the current state of Xid.  This
+This method retrieves information about the current state of XID.  This
 includes the [full state](#json-full) as well as general information about the
-state of the Xid daemon (e.g. how far it is synced to the blockchain).
+state of the XID daemon (e.g. how far it is synced to the blockchain).
 
 The returned data is a JSON object of the following form:
 
@@ -93,8 +105,8 @@ The returned data is a JSON object of the following form:
 Here, the placeholders have the following meanings:
 
 - **`CHAIN`** defines on which chain (`main`, `test` or `regtest`) the
-  Xid daemon is running.
-- **`STATE`** is the current syncing state of the Xid daemon.  It is typically
+  XID daemon is running.
+- **`STATE`** is the current syncing state of the XID daemon.  It is typically
   `catching-up` while the daemon is still syncing or `up-to-date` if it is
   synced to the latest block.
 - **`BLOCK`** is the block hash to which the current state corresponds.
@@ -103,23 +115,23 @@ Here, the placeholders have the following meanings:
 
 #### `waitforchange`
 
-This method blocks until the state of the Xid daemon changes (typically because
+This method blocks until the state of the XID daemon changes (typically because
 a new block has been processed).  It returns the *block hash* of the new best
 block as string.
 
 In exceptional situations, this method may also return JSON `null` instead,
 if no new best block is known.  This happens if the connected XAYA Core daemon
-does not even have blocks until the initial state of Xid yet.
+does not even have blocks until the initial state of XID yet.
 
 #### `stop`
 
-This is a JSON-RPC *notification* and simply requests the Xid daemon
+This is a JSON-RPC *notification* and simply requests the XID daemon
 to shut down cleanly.
 
 ### Data Retrieval
 
 In addition to the generic [`getcurrentstate`](#getcurrentstate) method which
-returns the full game state, Xid also exposes more specific methods for
+returns the full game state, XID also exposes more specific methods for
 retrieving certain parts of the game state.  Where possible, these methods
 should be used, as they allow more efficient access to the required data.
 
@@ -132,7 +144,7 @@ of a JSON object otherwise like [`getcurrentstate`](#getcurrentstate).
 
 ### Authentication Credentials
 
-Xid has special RPC methods supporting its use for
+XID has special RPC methods supporting its use for
 [user authentication](auth.md).  They are able to construct credentials,
 sign them and verify whether or not given credentials are valid.
 
@@ -229,7 +241,7 @@ values:
 #### `authwithwallet`
 
 This method constructs *and signs* authentication credentials using
-the wallet of the attached Xaya Core daemon.  To use it, Xid has to
+the wallet of the attached Xaya Core daemon.  To use it, XID has to
 be started with `--allow_wallet`.
 
 The `name`, `application` and `data` have to be passed as arguments.
