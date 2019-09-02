@@ -83,17 +83,16 @@ SetSignerList (Database& db, const std::string& name,
 
 void
 MoveProcessor::HandleSignerUpdate (const std::string& name,
-                                   const Json::Value& mv)
+                                   const Json::Value& obj)
 {
-  const auto& val = mv["s"];
-  if (!val.isObject ())
+  if (!obj.isObject ())
     return;
 
-  const auto& global = val["g"];
+  const auto& global = obj["g"];
   if (global.isArray ())
     SetSignerList (db, name, nullptr, global);
 
-  const auto& apps = val["a"];
+  const auto& apps = obj["a"];
   if (apps.isObject ())
     for (auto it = apps.begin (); it != apps.end (); ++it)
       {
@@ -114,6 +113,60 @@ MoveProcessor::HandleSignerUpdate (const std::string& name,
 }
 
 void
+MoveProcessor::HandleAddressUpdate (const std::string& name,
+                                    const Json::Value& obj)
+{
+  if (!obj.isObject ())
+    return;
+
+  auto* stmtDel = db.PrepareStatement (R"(
+    DELETE FROM `addresses`
+      WHERE `name` = ?1 AND `key` = ?2
+  )");
+  BindParameter (stmtDel, 1, name);
+
+  auto* stmtIns = db.PrepareStatement (R"(
+    INSERT OR REPLACE INTO `addresses`
+      (`name`, `key`, `address`)
+      VALUES (?1, ?2, ?3)
+  )");
+  BindParameter (stmtIns, 1, name);
+
+  for (auto it = obj.begin (); it != obj.end (); ++it)
+    {
+      CHECK (it.key ().isString ());
+      const auto key = it.key ().asString ();
+
+      const auto val = *it;
+      if (val.isNull ())
+        {
+          sqlite3_reset (stmtDel);
+          BindParameter (stmtDel, 2, key);
+          CHECK_EQ (sqlite3_step (stmtDel), SQLITE_DONE);
+          VLOG (1)
+              << "Deleted address association for " << name << " and " << key;
+          continue;
+        }
+      if (val.isString ())
+        {
+          const auto addr = val.asString ();
+          sqlite3_reset (stmtIns);
+          BindParameter (stmtIns, 2, key);
+          BindParameter (stmtIns, 3, addr);
+          CHECK_EQ (sqlite3_step (stmtIns), SQLITE_DONE);
+          VLOG (1)
+              << "New address for " << name << " and " << key
+              << ": " << addr;
+          continue;
+        }
+
+      LOG (WARNING)
+          << "Invalid address association for " << name << " and " << key
+          << ": " << val;
+    }
+}
+
+void
 MoveProcessor::ProcessOne (const Json::Value& obj)
 {
   CHECK (obj.isObject ());
@@ -131,7 +184,8 @@ MoveProcessor::ProcessOne (const Json::Value& obj)
       return;
     }
 
-  HandleSignerUpdate (name, mv);
+  HandleSignerUpdate (name, mv["s"]);
+  HandleAddressUpdate (name, mv["ca"]);
 }
 
 void

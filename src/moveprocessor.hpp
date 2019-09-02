@@ -30,9 +30,15 @@ private:
   void ProcessOne (const Json::Value& obj);
 
   /**
-   * Tries to process an update to the signers in the move (if one is present).
+   * Tries to process an update to the signers in the move with the given
+   * describing object, if it is not null.
    */
-  void HandleSignerUpdate (const std::string& name, const Json::Value& mv);
+  void HandleSignerUpdate (const std::string& name, const Json::Value& obj);
+
+  /**
+   * Tries to process an update to the crypto addresses.
+   */
+  void HandleAddressUpdate (const std::string& name, const Json::Value& obj);
 
 public:
 
