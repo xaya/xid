@@ -40,13 +40,17 @@ protected:
   }
 
   /**
-   * Expects that the state of the given name as JSON matches the given
-   * expected data (string that is parsed as JSON).
+   * Expects that the state of the given name and indexed by the given
+   * key (i.e. a particular subresult of it, like signers) as JSON matches
+   * the given expected data (string that is parsed as JSON).
    */
   void
-  ExpectNameState (const std::string& name, const std::string& expectedStr)
+  ExpectNameState (const std::string& name, const std::string& key,
+                   const std::string& expectedStr)
   {
-    EXPECT_TRUE (JsonEquals (GetNameState (GetDb (), name), expectedStr));
+    const auto actual = GetNameState (GetDb (), name);
+    CHECK (actual.isMember (key));
+    EXPECT_TRUE (JsonEquals (actual[key], expectedStr));
   }
 
 };
@@ -134,21 +138,18 @@ TEST_F (UpdateSignerTests, BasicUpdate)
     }
   ])");
 
-  ExpectNameState ("domob", R"(
-    {
-      "signers":
-        [
-          {"addresses": ["new global 1", "new global 2"]},
-          {
-            "application": "app",
-            "addresses": ["new app"]
-          },
-          {
-            "application": "other",
-            "addresses": ["new other"]
-          }
-        ]
-    }
+  ExpectNameState ("domob", "signers", R"(
+    [
+      {"addresses": ["new global 1", "new global 2"]},
+      {
+        "application": "app",
+        "addresses": ["new app"]
+      },
+      {
+        "application": "other",
+        "addresses": ["new other"]
+      }
+    ]
   )");
 }
 
@@ -167,16 +168,13 @@ TEST_F (UpdateSignerTests, ClearingGlobal)
     }
   ])");
 
-  ExpectNameState ("domob", R"(
-    {
-      "signers":
-        [
-          {
-            "application": "app",
-            "addresses": ["app"]
-          }
-        ]
-    }
+  ExpectNameState ("domob", "signers", R"(
+    [
+      {
+        "application": "app",
+        "addresses": ["app"]
+      }
+    ]
   )");
 }
 
@@ -196,17 +194,14 @@ TEST_F (UpdateSignerTests, ClearingApp)
     }
   ])");
 
-  ExpectNameState ("domob", R"(
-    {
-      "signers":
-        [
-          {"addresses": ["global"]},
-          {
-            "application": "other",
-            "addresses": ["other"]
-          }
-        ]
-    }
+  ExpectNameState ("domob", "signers", R"(
+    [
+      {"addresses": ["global"]},
+      {
+        "application": "other",
+        "addresses": ["other"]
+      }
+    ]
   )");
 }
 
@@ -229,17 +224,14 @@ TEST_F (UpdateSignerTests, OtherNameUntouched)
     }
   ])");
 
-  ExpectNameState ("domob", R"(
-    {
-      "signers":
-        [
-          {"addresses": ["global"]},
-          {
-            "application": "app",
-            "addresses": ["app"]
-          }
-        ]
-    }
+  ExpectNameState ("domob", "signers", R"(
+    [
+      {"addresses": ["global"]},
+      {
+        "application": "app",
+        "addresses": ["app"]
+      }
+    ]
   )");
 }
 
@@ -262,17 +254,14 @@ TEST_F (UpdateSignerTests, EmptyApp)
     }
   ])");
 
-  ExpectNameState ("domob", R"(
-    {
-      "signers":
-        [
-          {"addresses": ["new global"]},
-          {
-            "application": "",
-            "addresses": ["new app"]
-          }
-        ]
-    }
+  ExpectNameState ("domob", "signers", R"(
+    [
+      {"addresses": ["new global"]},
+      {
+        "application": "",
+        "addresses": ["new app"]
+      }
+    ]
   )");
 }
 
@@ -303,20 +292,17 @@ TEST_F (UpdateSignerTests, InvalidStuffIgnored)
     }
   ])");
 
-  ExpectNameState ("domob", R"(
-    {
-      "signers":
-        [
-          {
-            "application": "bar",
-            "addresses": ["addr 1", "addr 2"]
-          },
-          {
-            "application": "xyz",
-            "addresses": ["addr 3"]
-          }
-        ]
-    }
+  ExpectNameState ("domob", "signers", R"(
+    [
+      {
+        "application": "bar",
+        "addresses": ["addr 1", "addr 2"]
+      },
+      {
+        "application": "xyz",
+        "addresses": ["addr 3"]
+      }
+    ]
   )");
 }
 

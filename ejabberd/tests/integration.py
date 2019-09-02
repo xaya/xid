@@ -155,18 +155,17 @@ class XidAuthTest (XidTest):
     # Verify that the signers are set correctly (just in case).
     for n in self.testNames:
       xayaName = self.decodeName (n)
-      self.assertEqual (self.getRpc ("getnamestate", name=xayaName), {
-        "signers": [{"addresses": [self.addr]}],
-      })
-    self.assertEqual (self.getRpc ("getnamestate", name="nosigner"), {
-      "signers":
-        [
-          {
-            "application": "other",
-            "addresses": [self.addr],
-          },
-        ],
-    })
+      self.assertEqual (self.getRpc ("getnamestate", name=xayaName)["signers"],
+        [{"addresses": [self.addr]}],
+      )
+    self.assertEqual (self.getRpc ("getnamestate", name="nosigner")["signers"],
+      [
+        {
+          "application": "other",
+          "addresses": [self.addr],
+        },
+      ]
+    )
 
     # Now we can perform the main test with a running xidauth script.
     self.mainLogger.info ("Starting xidauth script...")

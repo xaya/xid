@@ -25,8 +25,12 @@ class GetNameStateTest (XidTest):
         [
           {"addresses": [addr]},
         ],
+      "addresses": {},
     })
-    self.assertEqual (self.getRpc ("getnamestate", name="foo"), {"signers": []})
+    self.assertEqual (self.getRpc ("getnamestate", name="foo"), {
+      "signers": [],
+      "addresses": {},
+    })
 
 
 if __name__ == "__main__":

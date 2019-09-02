@@ -50,23 +50,20 @@ class AuthTest (XidTest):
     }})
     self.sendMove ("", {"s": {"g": [self.addrGeneral]}})
     self.generate (1)
-    self.assertEqual (self.getRpc ("getnamestate", name="domob"), {
-      "signers":
-        [
-          {"addresses": [self.addrGeneral, "invalid just for fun"]},
-          {
-            "application": "",
-            "addresses": [self.addrEmpty],
-          },
-          {
-            "application": "app",
-            "addresses": [self.addrApp],
-          },
-        ],
-    })
-    self.assertEqual (self.getRpc ("getnamestate", name=""), {
-      "signers": [{"addresses": [self.addrGeneral]}],
-    })
+    self.assertEqual (self.getRpc ("getnamestate", name="domob")["signers"], [
+      {"addresses": [self.addrGeneral, "invalid just for fun"]},
+      {
+        "application": "",
+        "addresses": [self.addrEmpty],
+      },
+      {
+        "application": "app",
+        "addresses": [self.addrApp],
+      },
+    ])
+    self.assertEqual (self.getRpc ("getnamestate", name="")["signers"], [
+      {"addresses": [self.addrGeneral]},
+    ])
 
     self.testGetAuthMessage ()
     self.testAuthDataErrors ()
