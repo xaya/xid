@@ -37,7 +37,8 @@ protected:
 TEST_F (GetNameStateTests, Empty)
 {
   EXPECT_TRUE (JsonEquals (GetNameState ("foo"), R"({
-    "signers": [] 
+    "signers": [],
+    "addresses": {}
   })"));
 }
 
@@ -45,11 +46,14 @@ TEST_F (GetNameStateTests, NameFiltering)
 {
   Execute (R"(
     INSERT INTO `signers` (`name`, `application`, `address`)
-      VALUES ("domob", NULL, "global")
+      VALUES ("domob", NULL, "global");
+    INSERT INTO `addresses` (`name`, `key`, `address`)
+      VALUES ("domob", "btc", "1domob");
   )");
 
   EXPECT_TRUE (JsonEquals (GetNameState ("foo"), R"({
-    "signers": []
+    "signers": [],
+    "addresses": {}
   })"));
 }
 
@@ -64,20 +68,37 @@ TEST_F (GetNameStateTests, Signers)
              ("domob", "app", "app 2")
   )");
 
-  EXPECT_TRUE (JsonEquals (GetNameState ("domob"), R"({
-    "signers":
-      [
-        {"addresses": ["global 1", "global 2"]},
-        {
-          "application": "",
-          "addresses": ["empty"]
-        },
-        {
-          "application": "app",
-          "addresses": ["app 1", "app 2"]
-        }
-      ] 
-  })"));
+  EXPECT_TRUE (JsonEquals (GetNameState ("domob")["signers"], R"(
+    [
+      {"addresses": ["global 1", "global 2"]},
+      {
+        "application": "",
+        "addresses": ["empty"]
+      },
+      {
+        "application": "app",
+        "addresses": ["app 1", "app 2"]
+      }
+    ]
+  )"));
+}
+
+TEST_F (GetNameStateTests, Addresses)
+{
+  Execute (R"(
+    INSERT INTO `addresses` (`name`, `key`, `address`)
+      VALUES ("domob", "btc", "1domob"),
+             ("domob", "eth", "0xDomob"),
+             ("domob", "", "empty")
+  )");
+
+  EXPECT_TRUE (JsonEquals (GetNameState ("domob")["addresses"], R"(
+    {
+      "": "empty",
+      "btc": "1domob",
+      "eth": "0xDomob"
+    }
+  )"));
 }
 
 /* ************************************************************************** */
@@ -111,7 +132,10 @@ TEST_F (GetFullStateTests, WithNames)
     INSERT INTO `signers` (`name`, `application`, `address`)
       VALUES ("domob", NULL, "domob 1"),
              ("domob", NULL, "domob 2"),
-             ("foo", NULL, "foo")
+             ("foo", NULL, "foo");
+    INSERT INTO `addresses` (`name`, `key`, `address`)
+      VALUES ("domob", "btc", "1domob"),
+             ("bar", "eth", "0x123456");
   )");
 
   EXPECT_TRUE (JsonEquals (GetFullState (), R"({
@@ -122,14 +146,27 @@ TEST_F (GetFullStateTests, WithNames)
             "signers":
               [
                 {"addresses": ["domob 1", "domob 2"]}
-              ]
+              ],
+            "addresses":
+              {
+                "btc": "1domob"
+              }
           },
         "foo":
           {
             "signers":
               [
                 {"addresses": ["foo"]}
-              ]
+              ],
+            "addresses": {}
+          },
+        "bar":
+          {
+            "signers": [],
+            "addresses":
+              {
+                "eth": "0x123456"
+              }
           }
       }
   })"));

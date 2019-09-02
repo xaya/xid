@@ -1,6 +1,6 @@
 # XAYA ID
 
-XAYA ID (*Xid*) is an application built on the XAYA platform, that
+XAYA ID (*XID*) is an application built on the XAYA platform, that
 turns each XAYA name into a **secure digital identity** similar to
 [NameID](https://nameid.org/).
 
@@ -13,13 +13,13 @@ for end-to-end encryption.
 
 ## Overview
 
-From a high-level point of view, Xid allows owners of XAYA names to
+From a high-level point of view, XID allows owners of XAYA names to
 **associate metadata** to their names, that **everyone else can read**.
 Due to how XAYA works, **only the owners of names** are able to modify
 the data (through the keys in their wallets).  This ensures that the data
 can be trusted by everyone.
 
-There are two main types of data that can be associated with names:
+There are two types of data that can be associated with names at the moment:
 
 - **Signer addresses** can be used to enable authentication within applications.
   These are ordinary XAYA addresses from the user's wallet; to authenticate with
@@ -29,18 +29,22 @@ There are two main types of data that can be associated with names:
   signers (valid generally for all applications), or they can be set
   specifically for certain applications.
 
+- **Crypto addresses** in general (i.e. for other coins or tokens), so that
+  assets can be sent on another blockchain *to a XAYA name*.
+
+We also plan to support this in the future:
+
 - **Fingerprints of encryption keys** can be associated to names as well.
   This allows the secure and trusted exchange of keys, e.g. for signed emails
   ([GPG](https://gnupg.org/)) or messaging ([OTR](https://otr.cypherpunks.ca/)).
-  *This is not yet implemented in Xid, but will come in the future.*
 
 ## Technical Details
 
 More details can be found in specific documents:
 
-- [Xid game](doc/game.md): Details about the game state and move format
-  for Xid as game on the XAYA platform.
+- [XID game](doc/game.md): Details about the game state and move format
+  for XID as game on the XAYA platform.
 - [RPC interface](doc/rpc.md): The JSON format for game states and the RPC
-  interface of the Xid daemon.
+  interface of the XID daemon.
 - [Authentication](doc/auth.md): How the authentication protocol with a signer
   key works.

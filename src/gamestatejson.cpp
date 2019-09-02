@@ -30,10 +30,11 @@ SignerArrayToJson (const SignerArray& arr)
   return res;
 }
 
-} // anonymous namespace
-
+/**
+ * Retrieves the signers value of a name as JSON.
+ */
 Json::Value
-GetNameState (Database& db, const std::string& name)
+GetNameSigners (Database& db, const std::string& name)
 {
   auto* stmt = db.PrepareStatement (R"(
     SELECT `application`, `address`
@@ -61,23 +62,63 @@ GetNameState (Database& db, const std::string& name)
       arrayRef->emplace (GetColumnValue<std::string> (stmt, 1));
     }
 
-  Json::Value signersJson(Json::arrayValue);
+  Json::Value res(Json::arrayValue);
   if (!globalSigners.empty ())
     {
       Json::Value globalSignersJson(Json::objectValue);
       globalSignersJson["addresses"] = SignerArrayToJson (globalSigners);
-      signersJson.append (globalSignersJson);
+      res.append (globalSignersJson);
     }
   for (const auto& entry : signers)
     {
       Json::Value curJson(Json::objectValue);
       curJson["application"] = entry.first;
       curJson["addresses"] = SignerArrayToJson (entry.second);
-      signersJson.append (curJson);
+      res.append (curJson);
     }
 
+  return res;
+}
+
+/**
+ * Retrieves all address associations for a name as JSON.
+ */
+Json::Value
+GetNameAddresses (Database& db, const std::string& name)
+{
+  auto* stmt = db.PrepareStatement (R"(
+    SELECT `key`, `address`
+      FROM `addresses`
+      WHERE `name` = ?1
+  )");
+  BindParameter (stmt, 1, name);
+
   Json::Value res(Json::objectValue);
-  res["signers"] = signersJson;
+  while (true)
+    {
+      const int rc = sqlite3_step (stmt);
+      if (rc == SQLITE_DONE)
+        break;
+      CHECK_EQ (rc, SQLITE_ROW);
+
+      const auto key = GetColumnValue<std::string> (stmt, 0);
+      const auto addr = GetColumnValue<std::string> (stmt, 1);
+
+      CHECK (!res.isMember (key));
+      res[key] = addr;
+    }
+
+  return res;
+}
+
+} // anonymous namespace
+
+Json::Value
+GetNameState (Database& db, const std::string& name)
+{
+  Json::Value res(Json::objectValue);
+  res["signers"] = GetNameSigners (db, name);
+  res["addresses"] = GetNameAddresses (db, name);
 
   return res;
 }
@@ -87,6 +128,7 @@ GetFullState (Database& db)
 {
   auto* stmt = db.PrepareStatement (R"(
     SELECT DISTINCT `name` FROM `signers`
+    UNION SELECT DISTINCT `name` FROM `addresses`
   )");
 
   Json::Value names(Json::objectValue);

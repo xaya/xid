@@ -40,13 +40,17 @@ protected:
   }
 
   /**
-   * Expects that the state of the given name as JSON matches the given
-   * expected data (string that is parsed as JSON).
+   * Expects that the state of the given name and indexed by the given
+   * key (i.e. a particular subresult of it, like signers) as JSON matches
+   * the given expected data (string that is parsed as JSON).
    */
   void
-  ExpectNameState (const std::string& name, const std::string& expectedStr)
+  ExpectNameState (const std::string& name, const std::string& key,
+                   const std::string& expectedStr)
   {
-    EXPECT_TRUE (JsonEquals (GetNameState (GetDb (), name), expectedStr));
+    const auto actual = GetNameState (GetDb (), name);
+    CHECK (actual.isMember (key));
+    EXPECT_TRUE (JsonEquals (actual[key], expectedStr));
   }
 
 };
@@ -134,21 +138,18 @@ TEST_F (UpdateSignerTests, BasicUpdate)
     }
   ])");
 
-  ExpectNameState ("domob", R"(
-    {
-      "signers":
-        [
-          {"addresses": ["new global 1", "new global 2"]},
-          {
-            "application": "app",
-            "addresses": ["new app"]
-          },
-          {
-            "application": "other",
-            "addresses": ["new other"]
-          }
-        ]
-    }
+  ExpectNameState ("domob", "signers", R"(
+    [
+      {"addresses": ["new global 1", "new global 2"]},
+      {
+        "application": "app",
+        "addresses": ["new app"]
+      },
+      {
+        "application": "other",
+        "addresses": ["new other"]
+      }
+    ]
   )");
 }
 
@@ -167,16 +168,13 @@ TEST_F (UpdateSignerTests, ClearingGlobal)
     }
   ])");
 
-  ExpectNameState ("domob", R"(
-    {
-      "signers":
-        [
-          {
-            "application": "app",
-            "addresses": ["app"]
-          }
-        ]
-    }
+  ExpectNameState ("domob", "signers", R"(
+    [
+      {
+        "application": "app",
+        "addresses": ["app"]
+      }
+    ]
   )");
 }
 
@@ -196,17 +194,14 @@ TEST_F (UpdateSignerTests, ClearingApp)
     }
   ])");
 
-  ExpectNameState ("domob", R"(
-    {
-      "signers":
-        [
-          {"addresses": ["global"]},
-          {
-            "application": "other",
-            "addresses": ["other"]
-          }
-        ]
-    }
+  ExpectNameState ("domob", "signers", R"(
+    [
+      {"addresses": ["global"]},
+      {
+        "application": "other",
+        "addresses": ["other"]
+      }
+    ]
   )");
 }
 
@@ -229,17 +224,14 @@ TEST_F (UpdateSignerTests, OtherNameUntouched)
     }
   ])");
 
-  ExpectNameState ("domob", R"(
-    {
-      "signers":
-        [
-          {"addresses": ["global"]},
-          {
-            "application": "app",
-            "addresses": ["app"]
-          }
-        ]
-    }
+  ExpectNameState ("domob", "signers", R"(
+    [
+      {"addresses": ["global"]},
+      {
+        "application": "app",
+        "addresses": ["app"]
+      }
+    ]
   )");
 }
 
@@ -262,17 +254,14 @@ TEST_F (UpdateSignerTests, EmptyApp)
     }
   ])");
 
-  ExpectNameState ("domob", R"(
-    {
-      "signers":
-        [
-          {"addresses": ["new global"]},
-          {
-            "application": "",
-            "addresses": ["new app"]
-          }
-        ]
-    }
+  ExpectNameState ("domob", "signers", R"(
+    [
+      {"addresses": ["new global"]},
+      {
+        "application": "",
+        "addresses": ["new app"]
+      }
+    ]
   )");
 }
 
@@ -303,19 +292,151 @@ TEST_F (UpdateSignerTests, InvalidStuffIgnored)
     }
   ])");
 
-  ExpectNameState ("domob", R"(
+  ExpectNameState ("domob", "signers", R"(
+    [
+      {
+        "application": "bar",
+        "addresses": ["addr 1", "addr 2"]
+      },
+      {
+        "application": "xyz",
+        "addresses": ["addr 3"]
+      }
+    ]
+  )");
+}
+
+/* ************************************************************************** */
+
+class UpdateAddressesTests : public MoveProcessorTests
+{
+
+protected:
+
+  /**
+   * Adds an address entry with the given data into the test database.
+   */
+  void
+  AddAddress (const std::string& name, const std::string& key,
+              const std::string& address)
+  {
+    auto* stmt = GetDb ().PrepareStatement (R"(
+      INSERT INTO `addresses`
+        (`name`, `key`, `address`)
+        VALUES (?1, ?2, ?3)
+    )");
+    BindParameter (stmt, 1, name);
+    BindParameter (stmt, 2, key);
+    BindParameter (stmt, 3, address);
+
+    CHECK_EQ (sqlite3_step (stmt), SQLITE_DONE);
+  }
+
+};
+
+TEST_F (UpdateAddressesTests, BasicUpdate)
+{
+  AddAddress ("domob", "btc", "1domob");
+  AddAddress ("domob", "chi", "C123456");
+
+  Process (R"([
     {
-      "signers":
-        [
-          {
-            "application": "bar",
-            "addresses": ["addr 1", "addr 2"]
-          },
-          {
-            "application": "xyz",
-            "addresses": ["addr 3"]
-          }
-        ]
+      "name": "domob",
+      "move":
+        {
+          "ca":
+            {
+              "btc": "3domob",
+              "eth": "0xDomob"
+            }
+        }
+    }
+  ])");
+
+  ExpectNameState ("domob", "addresses", R"(
+    {
+      "btc": "3domob",
+      "chi": "C123456",
+      "eth": "0xDomob"
+    }
+  )");
+}
+
+TEST_F (UpdateAddressesTests, Delete)
+{
+  AddAddress ("domob", "btc", "1domob");
+  AddAddress ("domob", "chi", "C123456");
+
+  Process (R"([
+    {
+      "name": "domob",
+      "move":
+        {
+          "ca":
+            {
+              "chi": null,
+              "ltc": null,
+              "eth": "0xDomob"
+            }
+        }
+    }
+  ])");
+
+  ExpectNameState ("domob", "addresses", R"(
+    {
+      "btc": "1domob",
+      "eth": "0xDomob"
+    }
+  )");
+}
+
+TEST_F (UpdateAddressesTests, OtherNameUntouched)
+{
+  AddAddress ("domob", "btc", "1domob");
+
+  Process (R"([
+    {
+      "name": "foo",
+      "move":
+        {
+          "ca":
+            {
+              "btc": "3bar",
+              "eth": "0x123456"
+            }
+        }
+    }
+  ])");
+
+  ExpectNameState ("domob", "addresses", R"(
+    {
+      "btc": "1domob"
+    }
+  )");
+}
+
+TEST_F (UpdateAddressesTests, InvalidStuffIgnored)
+{
+  Process (R"([
+    {
+      "name": "domob",
+      "move":
+        {
+          "x": 42,
+          "ca":
+            {
+              "a": [],
+              "y": 501,
+              "z": {"invalid": "address update"},
+              "btc": "1domob"
+            }
+        }
+    }
+  ])");
+
+  ExpectNameState ("domob", "addresses", R"(
+    {
+      "btc": "1domob"
     }
   )");
 }
