@@ -4,6 +4,8 @@
 
 #include "rest.hpp"
 
+#include "gamestatejson.hpp"
+
 #include <glog/logging.h>
 
 namespace xid
@@ -146,9 +148,30 @@ RestApi::RequestCallback (void* data, struct MHD_Connection* conn,
 Json::Value
 RestApi::Process (const std::string& url)
 {
-  Json::Value foo(Json::objectValue);
-  foo["bar"] = 42;
-  return foo;
+  if (url == "/state")
+    {
+      Json::Value res = logic.GetCustomStateData (game,
+        [] (Database& db)
+          {
+            return Json::Value ();
+          });
+      res.removeMember ("data");
+      return res;
+    }
+
+  const std::string prefixName = "/name/";
+  if (url.substr (0, prefixName.size ()) == prefixName)
+    {
+      CHECK_GE (url.size (), prefixName.size ());
+      const std::string name = url.substr (prefixName.size ());
+      return logic.GetCustomStateData (game,
+        [&name] (Database& db)
+          {
+            return GetNameState (db, name);
+          });
+    }
+
+  throw HttpError (MHD_HTTP_NOT_FOUND, "invalid API endpoint");
 }
 
 void
