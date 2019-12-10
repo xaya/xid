@@ -138,7 +138,7 @@ returns the full game state, XID also exposes more specific methods for
 retrieving certain parts of the game state.  Where possible, these methods
 should be used, as they allow more efficient access to the required data.
 
-#### `getnamestate`
+#### <a id="getnamestate">`getnamestate`</a>
 
 This method retrieves the data (if any) for **one specific name**.  The name
 in question has to be passed as a JSON string to the keyword argument `name`.

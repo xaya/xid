@@ -46,5 +46,7 @@ More details can be found in specific documents:
   for XID as game on the XAYA platform.
 - [RPC interface](doc/rpc.md): The JSON format for game states and the RPC
   interface of the XID daemon.
+- [REST interface](doc/rest.md): The simple REST API that the XID daemon can
+  optionally expose.
 - [Authentication](doc/auth.md): How the authentication protocol with a signer
   key works.

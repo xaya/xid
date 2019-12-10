@@ -5,6 +5,7 @@
 #include "config.h"
 
 #include "logic.hpp"
+#include "rest.hpp"
 #include "xidrpcserver.hpp"
 
 #include <xayagame/defaultmain.hpp>
@@ -33,6 +34,9 @@ DEFINE_int32 (game_rpc_port, 0,
               "the port at which xid's JSON-RPC server will be started"
               " (if non-zero)");
 
+DEFINE_int32 (rest_port, 0,
+              "if non-zero, the port at which the REST interface should run");
+
 DEFINE_int32 (enable_pruning, -1,
               "if non-negative (including zero), old undo data will be pruned"
               " and only as many blocks as specified will be kept");
@@ -55,6 +59,9 @@ private:
    */
   xid::XidGame& rules;
 
+  /** The REST API port.  */
+  int restPort = 0;
+
   /** If set to non-null, enable the Xaya wallet on the RPC server.  */
   XayaWalletRpcClient* xayaWallet = nullptr;
 
@@ -63,6 +70,12 @@ public:
   explicit XidInstanceFactory (xid::XidGame& r)
     : rules(r)
   {}
+
+  void
+  EnableRest (const int p)
+  {
+    restPort = p;
+  }
 
   void
   EnableWallet (XayaWalletRpcClient& xw)
@@ -81,6 +94,17 @@ public:
       rpc->Get ().EnableWallet (*xayaWallet);
 
     return rpc;
+  }
+
+  std::vector<std::unique_ptr<xaya::GameComponent>>
+  BuildGameComponents (xaya::Game& game) override
+  {
+    std::vector<std::unique_ptr<xaya::GameComponent>> res;
+
+    if (restPort != 0)
+      res.push_back (std::make_unique<xid::RestApi> (game, rules, restPort));
+
+    return res;
   }
 
 };
@@ -127,6 +151,8 @@ main (int argc, char** argv)
 
   xid::XidGame rules;
   XidInstanceFactory instanceFact(rules);
+  if (FLAGS_rest_port != 0)
+    instanceFact.EnableRest (FLAGS_rest_port);
   if (xayaWallet != nullptr)
     instanceFact.EnableWallet (*xayaWallet);
   config.InstanceFactory = &instanceFact;
