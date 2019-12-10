@@ -15,6 +15,7 @@ The data for **individual names** is represented by a JSON object of the
 following format:
 
     {
+      "name": NAME,
       "signers":
         [
           {
@@ -47,6 +48,8 @@ for other coins and tokens.  Each `CRYPTO`n is a string that identifies the
 coin/token (e.g. `btc`), with the `CRYPTOADDR`n being the corresponding address
 also as a string.  The individual keys and formats for addresses are not
 defined (or interpreted) further by XID itself.
+
+For convenience, the name itself is repeated as `NAME` in the JSON state.
 
 ### <a id="json-full">Full Game State</a>
 

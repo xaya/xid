@@ -117,6 +117,7 @@ Json::Value
 GetNameState (Database& db, const std::string& name)
 {
   Json::Value res(Json::objectValue);
+  res["name"] = name;
   res["signers"] = GetNameSigners (db, name);
   res["addresses"] = GetNameAddresses (db, name);
 

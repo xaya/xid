@@ -37,6 +37,7 @@ protected:
 TEST_F (GetNameStateTests, Empty)
 {
   EXPECT_TRUE (JsonEquals (GetNameState ("foo"), R"({
+    "name": "foo",
     "signers": [],
     "addresses": {}
   })"));
@@ -52,6 +53,7 @@ TEST_F (GetNameStateTests, NameFiltering)
   )");
 
   EXPECT_TRUE (JsonEquals (GetNameState ("foo"), R"({
+    "name": "foo",
     "signers": [],
     "addresses": {}
   })"));
@@ -143,6 +145,7 @@ TEST_F (GetFullStateTests, WithNames)
       {
         "domob":
           {
+            "name": "domob",
             "signers":
               [
                 {"addresses": ["domob 1", "domob 2"]}
@@ -154,6 +157,7 @@ TEST_F (GetFullStateTests, WithNames)
           },
         "foo":
           {
+            "name": "foo",
             "signers":
               [
                 {"addresses": ["foo"]}
@@ -162,6 +166,7 @@ TEST_F (GetFullStateTests, WithNames)
           },
         "bar":
           {
+            "name": "bar",
             "signers": [],
             "addresses":
               {

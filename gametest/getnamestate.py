@@ -21,6 +21,7 @@ class GetNameStateTest (XidTest):
     self.generate (1)
 
     self.assertEqual (self.getRpc ("getnamestate", name="domob"), {
+      "name": "domob",
       "signers":
         [
           {"addresses": [addr]},
@@ -28,6 +29,7 @@ class GetNameStateTest (XidTest):
       "addresses": {},
     })
     self.assertEqual (self.getRpc ("getnamestate", name="foo"), {
+      "name": "foo",
       "signers": [],
       "addresses": {},
     })
