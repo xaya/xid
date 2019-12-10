@@ -59,6 +59,9 @@ private:
    */
   xid::XidGame& rules;
 
+  /** The REST API port.  */
+  int restPort = 0;
+
   /** If set to non-null, enable the Xaya wallet on the RPC server.  */
   XayaWalletRpcClient* xayaWallet = nullptr;
 
@@ -67,6 +70,12 @@ public:
   explicit XidInstanceFactory (xid::XidGame& r)
     : rules(r)
   {}
+
+  void
+  EnableRest (const int p)
+  {
+    restPort = p;
+  }
 
   void
   EnableWallet (XayaWalletRpcClient& xw)
@@ -85,6 +94,17 @@ public:
       rpc->Get ().EnableWallet (*xayaWallet);
 
     return rpc;
+  }
+
+  std::vector<std::unique_ptr<xaya::GameComponent>>
+  BuildGameComponents (xaya::Game& game) override
+  {
+    std::vector<std::unique_ptr<xaya::GameComponent>> res;
+
+    if (restPort != 0)
+      res.push_back (std::make_unique<xid::RestApi> (game, rules, restPort));
+
+    return res;
   }
 
 };
@@ -131,13 +151,11 @@ main (int argc, char** argv)
 
   xid::XidGame rules;
   XidInstanceFactory instanceFact(rules);
+  if (FLAGS_rest_port != 0)
+    instanceFact.EnableRest (FLAGS_rest_port);
   if (xayaWallet != nullptr)
     instanceFact.EnableWallet (*xayaWallet);
   config.InstanceFactory = &instanceFact;
-
-  xid::RestApi rest(FLAGS_rest_port);
-  if (FLAGS_rest_port != 0)
-    rest.Start ();
 
   const int rc = xaya::SQLiteMain (config, "id", rules);
 

@@ -5,6 +5,11 @@
 #ifndef XID_REST_HPP
 #define XID_REST_HPP
 
+#include "logic.hpp"
+
+#include <xayagame/defaultmain.hpp>
+#include <xayagame/game.hpp>
+
 #include <json/json.h>
 
 #include <microhttpd.h>
@@ -17,13 +22,19 @@ namespace xid
 /**
  * HTTP server providing a REST API for reading xid data.
  */
-class RestApi
+class RestApi : public xaya::GameComponent
 {
 
 private:
 
   /** Exception class thrown for returning HTTP errors to the client.  */
   class HttpError;
+
+  /** The underlying Game instance that manages everything.  */
+  xaya::Game& game;
+
+  /** The game logic implementation.  */
+  XidGame& logic;
 
   /** The port to listen on.  */
   const int port;
@@ -48,8 +59,8 @@ private:
 
 public:
 
-  explicit RestApi (const int p)
-    : port(p)
+  explicit RestApi (xaya::Game& g, XidGame& l, const int p)
+    : game(g), logic(l), port(p)
   {}
 
   ~RestApi ();
@@ -62,12 +73,12 @@ public:
    * Starts the REST server.  Processing of requests is done in a separate
    * thread, so this method returns immediately.
    */
-  void Start ();
+  void Start () override;
 
   /**
    * Shuts down the REST server.
    */
-  void Stop ();
+  void Stop () override;
 
 };
 
