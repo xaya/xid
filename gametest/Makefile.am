@@ -7,6 +7,7 @@ REGTESTS = \
   auth.py \
   authwithwallet.py \
   getnamestate.py \
+  rest.py \
   signer_update.py
 
 EXTRA_DIST = $(REGTESTS) $(TEST_LIBRARY)
