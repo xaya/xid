@@ -5,6 +5,7 @@
 #include "config.h"
 
 #include "logic.hpp"
+#include "rest.hpp"
 #include "xidrpcserver.hpp"
 
 #include <xayagame/defaultmain.hpp>
@@ -32,6 +33,9 @@ DEFINE_string (xaya_rpc_url, "",
 DEFINE_int32 (game_rpc_port, 0,
               "the port at which xid's JSON-RPC server will be started"
               " (if non-zero)");
+
+DEFINE_int32 (rest_port, 0,
+              "if non-zero, the port at which the REST interface should run");
 
 DEFINE_int32 (enable_pruning, -1,
               "if non-negative (including zero), old undo data will be pruned"
@@ -130,6 +134,10 @@ main (int argc, char** argv)
   if (xayaWallet != nullptr)
     instanceFact.EnableWallet (*xayaWallet);
   config.InstanceFactory = &instanceFact;
+
+  xid::RestApi rest(FLAGS_rest_port);
+  if (FLAGS_rest_port != 0)
+    rest.Start ();
 
   const int rc = xaya::SQLiteMain (config, "id", rules);
 

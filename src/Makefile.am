@@ -36,9 +36,11 @@ xid_LDADD = \
   $(JSON_LIBS) $(PROTOBUF_LIBS) $(GLOG_LIBS) $(GFLAGS_LIBS)
 xid_SOURCES = main.cpp \
   logic.cpp \
+  rest.cpp \
   xidrpcserver.cpp
 xidheaders = \
   logic.hpp \
+  rest.hpp \
   xidrpcserver.hpp \
   \
   rpc-stubs/xidrpcserverstub.h
