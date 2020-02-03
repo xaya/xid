@@ -1,8 +1,10 @@
-// Copyright (C) 2019 The Xaya developers
+// Copyright (C) 2019-2020 The Xaya developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "moveprocessor.hpp"
+
+#include "database.hpp"
 
 #include <glog/logging.h>
 
@@ -17,7 +19,7 @@ namespace
  * if nullptr is passed) to the given JSON array.
  */
 void
-SetSignerList (Database& db, const std::string& name,
+SetSignerList (xaya::SQLiteDatabase& db, const std::string& name,
                const std::string* application,
                const Json::Value& signerArr)
 {
@@ -32,13 +34,13 @@ SetSignerList (Database& db, const std::string& name,
 
   sqlite3_stmt* stmt = nullptr;
   if (application == nullptr)
-    stmt = db.PrepareStatement (R"(
+    stmt = db.Prepare (R"(
       DELETE FROM `signers`
         WHERE `name` = ?1 AND `application` IS NULL
     )");
   else
     {
-      stmt = db.PrepareStatement (R"(
+      stmt = db.Prepare (R"(
         DELETE FROM `signers`
           WHERE `name` = ?1 AND `application` = ?2
       )");
@@ -47,7 +49,7 @@ SetSignerList (Database& db, const std::string& name,
   BindParameter (stmt, 1, name);
   CHECK_EQ (sqlite3_step (stmt), SQLITE_DONE);
 
-  stmt = db.PrepareStatement (R"(
+  stmt = db.Prepare (R"(
     INSERT INTO `signers`
       (`name`, `application`, `address`)
       VALUES (?1, ?2, ?3)
@@ -119,13 +121,13 @@ MoveProcessor::HandleAddressUpdate (const std::string& name,
   if (!obj.isObject ())
     return;
 
-  auto* stmtDel = db.PrepareStatement (R"(
+  auto* stmtDel = db.Prepare (R"(
     DELETE FROM `addresses`
       WHERE `name` = ?1 AND `key` = ?2
   )");
   BindParameter (stmtDel, 1, name);
 
-  auto* stmtIns = db.PrepareStatement (R"(
+  auto* stmtIns = db.Prepare (R"(
     INSERT OR REPLACE INTO `addresses`
       (`name`, `key`, `address`)
       VALUES (?1, ?2, ?3)

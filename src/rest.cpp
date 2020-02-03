@@ -151,7 +151,7 @@ RestApi::Process (const std::string& url)
   if (url == "/state")
     {
       Json::Value res = logic.GetCustomStateData (game,
-        [] (Database& db)
+        [] (const xaya::SQLiteDatabase& db)
           {
             return Json::Value ();
           });
@@ -165,7 +165,7 @@ RestApi::Process (const std::string& url)
       CHECK_GE (url.size (), prefixName.size ());
       const std::string name = url.substr (prefixName.size ());
       return logic.GetCustomStateData (game,
-        [&name] (Database& db)
+        [&name] (const xaya::SQLiteDatabase& db)
           {
             return GetNameState (db, name);
           });

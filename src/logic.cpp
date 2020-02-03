@@ -1,4 +1,4 @@
-// Copyright (C) 2019 The Xaya developers
+// Copyright (C) 2019-2020 The Xaya developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -15,38 +15,10 @@
 namespace xid
 {
 
-/**
- * Database instance based on an SQLiteGame.
- */
-class SQLiteDatabase : public Database
-{
-
-private:
-
-  /** Underlying SQLiteGame instance.  */
-  XidGame& game;
-
-public:
-
-  explicit SQLiteDatabase (XidGame& g)
-    : game(g)
-  {}
-
-  SQLiteDatabase (const SQLiteDatabase&) = delete;
-  void operator= (const SQLiteDatabase&) = delete;
-
-  sqlite3_stmt*
-  PrepareStatement (const std::string& sql) override
-  {
-    return game.PrepareStatement (sql);
-  }
-
-};
-
 void
-XidGame::SetupSchema (sqlite3* db)
+XidGame::SetupSchema (xaya::SQLiteDatabase& db)
 {
-  SetupDatabaseSchema (db);
+  SetupDatabaseSchema (*db);
 }
 
 void
@@ -79,26 +51,23 @@ XidGame::GetInitialStateBlock (unsigned& height, std::string& hashHex) const
 }
 
 void
-XidGame::InitialiseState (sqlite3* db)
+XidGame::InitialiseState (xaya::SQLiteDatabase& db)
 {
   /* The initial state is simply an empty database with no defined signer
      keys or other data for any name.  */
 }
 
 void
-XidGame::UpdateState (sqlite3* db, const Json::Value& blockData)
+XidGame::UpdateState (xaya::SQLiteDatabase& db, const Json::Value& blockData)
 {
-  SQLiteDatabase dbObj(*this);
-
-  MoveProcessor proc(dbObj);
+  MoveProcessor proc(db);
   proc.ProcessAll (blockData["moves"]);
 }
 
 Json::Value
-XidGame::GetStateAsJson (sqlite3* db)
+XidGame::GetStateAsJson (const xaya::SQLiteDatabase& db)
 {
-  SQLiteDatabase dbObj(*this);
-  return GetFullState (dbObj);
+  return GetFullState (db);
 }
 
 std::string
@@ -111,10 +80,9 @@ Json::Value
 XidGame::GetCustomStateData (xaya::Game& game, const JsonStateFromDatabase& cb)
 {
   return SQLiteGame::GetCustomStateData (game, "data",
-    [this, cb] (sqlite3* db)
+    [this, cb] (const xaya::SQLiteDatabase& db)
       {
-        SQLiteDatabase dbObj(*this);
-        return cb (dbObj);
+        return cb (db);
       });
 }
 

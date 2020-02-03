@@ -11,8 +11,10 @@ BUILT_SOURCES = $(RPC_STUBS)
 CLEANFILES = $(RPC_STUBS) schema.cpp
 
 libxid_la_CXXFLAGS = \
+  $(XAYAGAME_CFLAGS) \
   $(JSON_CFLAGS) $(GLOG_CFLAGS) $(SQLITE3_CFLAGS)
 libxid_la_LIBADD = \
+  $(XAYAGAME_LIBS) \
   $(JSON_LIBS) $(GLOG_LIBS) $(SQLITE3_LIBS)
 libxid_la_SOURCES = \
   database.cpp \
@@ -52,10 +54,12 @@ TESTS = tests
 
 tests_CXXFLAGS = \
   $(GTEST_MAIN_CFLAGS) \
+  $(XAYAGAME_CFLAGS) \
   $(JSON_CFLAGS) $(GTEST_CFLAGS) $(GLOG_CFLAGS) $(SQLITE3_CFLAGS)
 tests_LDADD = \
   $(builddir)/libxid.la \
   $(GTEST_MAIN_LIBS) \
+  $(XAYAGAME_LIBS) \
   $(JSON_LIBS) $(GTEST_LIBS) $(GLOG_LIBS) $(SQLITE3_LIBS)
 tests_SOURCES = \
   gamestatejson_tests.cpp \

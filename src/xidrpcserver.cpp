@@ -1,9 +1,10 @@
-// Copyright (C) 2019 The Xaya developers
+// Copyright (C) 2019-2020 The Xaya developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "xidrpcserver.hpp"
 
+#include "database.hpp"
 #include "gamestatejson.hpp"
 
 #include "auth/credentials.hpp"
@@ -96,7 +97,7 @@ XidRpcServer::getnamestate (const std::string& name)
 {
   LOG (INFO) << "RPC method called: getnamestate " << name;
   return logic.GetCustomStateData (game,
-    [&name] (Database& db)
+    [&name] (const xaya::SQLiteDatabase& db)
       {
         return GetNameState (db, name);
       });
@@ -201,10 +202,10 @@ namespace
  * and application.
  */
 bool
-IsValidSigner (Database& db, const std::string& addr,
+IsValidSigner (const xaya::SQLiteDatabase& db, const std::string& addr,
                const std::string& name, const std::string& app)
 {
-  auto* stmt = db.PrepareStatement (R"(
+  auto* stmt = db.PrepareRo (R"(
     SELECT `application`
       FROM `signers`
       WHERE `name` = ?1 AND `address` = ?2
@@ -242,7 +243,7 @@ XidRpcServer::verifyauth (const std::string& application,
       << "  application: " << application << "\n"
       << "  password: " << password;
   return logic.GetCustomStateData (game,
-    [this, &name, &application, &password] (Database& db)
+    [this, &name, &application, &password] (const xaya::SQLiteDatabase& db)
       {
         Json::Value res(Json::objectValue);
         res["valid"] = false;
@@ -308,11 +309,12 @@ namespace
  * on behalf of the given name and application.
  */
 bool
-FindSignerAddress (Database& db, XayaWalletRpcClient& xayaWallet,
+FindSignerAddress (const xaya::SQLiteDatabase& db,
+                   XayaWalletRpcClient& xayaWallet,
                    const std::string& name, const std::string& application,
                    std::string& addr)
 {
-  auto* stmt = db.PrepareStatement (R"(
+  auto* stmt = db.PrepareRo (R"(
     SELECT `address`
       FROM `signers`
       WHERE `name` = ?1 AND (`application` IS NULL OR `application` = ?2)
@@ -376,7 +378,8 @@ XidRpcServer::authwithwallet (const std::string& application,
   const std::string authMsg = cred.GetAuthMessage ();
 
   return logic.GetCustomStateData (game,
-    [this, &name, &application, &cred, &authMsg] (Database& db)
+    [this, &name, &application, &cred, &authMsg]
+        (const xaya::SQLiteDatabase& db)
       {
         std::string addr;
         if (!FindSignerAddress (db, *xayaWallet, name, application, addr))

@@ -1,17 +1,15 @@
-// Copyright (C) 2019 The Xaya developers
+// Copyright (C) 2019-2020 The Xaya developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #ifndef XID_DBTEST_HPP
 #define XID_DBTEST_HPP
 
-#include "database.hpp"
+#include <xayagame/sqlitestorage.hpp>
 
 #include <gtest/gtest.h>
 
 #include <sqlite3.h>
-
-#include <memory>
 
 namespace xid
 {
@@ -25,16 +23,12 @@ class DBTest : public testing::Test
 
 private:
 
-  /** The SQLite database handle.  */
-  sqlite3* handle = nullptr;
-
-  /** The Database instance used for testing (with statement cache).  */
-  std::unique_ptr<Database> db;
+  /** The SQLiteDatabase instance.  */
+  xaya::SQLiteDatabase db;
 
 protected:
 
   DBTest ();
-  ~DBTest ();
 
   /**
    * Returns the underlying database handle for SQLite.
@@ -42,13 +36,17 @@ protected:
   sqlite3*
   GetHandle ()
   {
-    return handle;
+    return *db;
   }
 
   /**
    * Returns a Database instance for the test.
    */
-  Database& GetDb ();
+  xaya::SQLiteDatabase&
+  GetDb ()
+  {
+    return db;
+  }
 
   /**
    * Executes the given SQL statement directly.  This can be used to modify

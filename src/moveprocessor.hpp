@@ -1,11 +1,11 @@
-// Copyright (C) 2019 The Xaya developers
+// Copyright (C) 2019-2020 The Xaya developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #ifndef XID_MOVEPROCESSOR_HPP
 #define XID_MOVEPROCESSOR_HPP
 
-#include "database.hpp"
+#include <xayagame/sqlitestorage.hpp>
 
 #include <json/json.h>
 
@@ -22,7 +22,7 @@ class MoveProcessor
 private:
 
   /** The underlying database connection that is used for updates.  */
-  Database& db;
+  xaya::SQLiteDatabase& db;
 
   /**
    * Processes one entry in the moves array (given as JSON object).
@@ -42,7 +42,7 @@ private:
 
 public:
 
-  explicit MoveProcessor (Database& d)
+  explicit MoveProcessor (xaya::SQLiteDatabase& d)
     : db(d)
   {}
 

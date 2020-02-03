@@ -1,8 +1,10 @@
-// Copyright (C) 2019 The Xaya developers
+// Copyright (C) 2019-2020 The Xaya developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "gamestatejson.hpp"
+
+#include "database.hpp"
 
 #include <glog/logging.h>
 
@@ -34,9 +36,9 @@ SignerArrayToJson (const SignerArray& arr)
  * Retrieves the signers value of a name as JSON.
  */
 Json::Value
-GetNameSigners (Database& db, const std::string& name)
+GetNameSigners (const xaya::SQLiteDatabase& db, const std::string& name)
 {
-  auto* stmt = db.PrepareStatement (R"(
+  auto* stmt = db.PrepareRo (R"(
     SELECT `application`, `address`
       FROM `signers`
       WHERE `name` = ?1
@@ -84,9 +86,9 @@ GetNameSigners (Database& db, const std::string& name)
  * Retrieves all address associations for a name as JSON.
  */
 Json::Value
-GetNameAddresses (Database& db, const std::string& name)
+GetNameAddresses (const xaya::SQLiteDatabase& db, const std::string& name)
 {
-  auto* stmt = db.PrepareStatement (R"(
+  auto* stmt = db.PrepareRo (R"(
     SELECT `key`, `address`
       FROM `addresses`
       WHERE `name` = ?1
@@ -114,7 +116,7 @@ GetNameAddresses (Database& db, const std::string& name)
 } // anonymous namespace
 
 Json::Value
-GetNameState (Database& db, const std::string& name)
+GetNameState (const xaya::SQLiteDatabase& db, const std::string& name)
 {
   Json::Value res(Json::objectValue);
   res["name"] = name;
@@ -125,9 +127,9 @@ GetNameState (Database& db, const std::string& name)
 }
 
 Json::Value
-GetFullState (Database& db)
+GetFullState (const xaya::SQLiteDatabase& db)
 {
-  auto* stmt = db.PrepareStatement (R"(
+  auto* stmt = db.PrepareRo (R"(
     SELECT DISTINCT `name` FROM `signers`
     UNION SELECT DISTINCT `name` FROM `addresses`
   )");

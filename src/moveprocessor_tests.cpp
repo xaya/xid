@@ -1,9 +1,10 @@
-// Copyright (C) 2019 The Xaya developers
+// Copyright (C) 2019-2020 The Xaya developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "moveprocessor.hpp"
 
+#include "database.hpp"
 #include "dbtest.hpp"
 #include "gamestatejson.hpp"
 #include "testutils.hpp"
@@ -97,7 +98,7 @@ protected:
   AddSigner (const std::string& name, const std::string& application,
              const std::string& address)
   {
-    auto* stmt = GetDb ().PrepareStatement (R"(
+    auto* stmt = GetDb ().Prepare (R"(
       INSERT INTO `signers`
         (`name`, `application`, `address`)
         VALUES (?1, ?2, ?3)
@@ -320,7 +321,7 @@ protected:
   AddAddress (const std::string& name, const std::string& key,
               const std::string& address)
   {
-    auto* stmt = GetDb ().PrepareStatement (R"(
+    auto* stmt = GetDb ().Prepare (R"(
       INSERT INTO `addresses`
         (`name`, `key`, `address`)
         VALUES (?1, ?2, ?3)

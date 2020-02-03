@@ -1,14 +1,13 @@
-// Copyright (C) 2019 The Xaya developers
+// Copyright (C) 2019-2020 The Xaya developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #ifndef XID_LOGIC_HPP
 #define XID_LOGIC_HPP
 
-#include "database.hpp"
-
 #include <xayagame/game.hpp>
 #include <xayagame/sqlitegame.hpp>
+#include <xayagame/sqlitestorage.hpp>
 
 #include <sqlite3.h>
 
@@ -20,8 +19,6 @@
 namespace xid
 {
 
-class SQLiteDatabase;
-
 /**
  * The game logic implementation for the xid game-state processor.
  */
@@ -30,22 +27,22 @@ class XidGame : public xaya::SQLiteGame
 
 protected:
 
-  void SetupSchema (sqlite3* db) override;
+  void SetupSchema (xaya::SQLiteDatabase& db) override;
 
   void GetInitialStateBlock (unsigned& height,
                              std::string& hashHex) const override;
-  void InitialiseState (sqlite3* db) override;
+  void InitialiseState (xaya::SQLiteDatabase& db) override;
 
-  void UpdateState (sqlite3* db, const Json::Value& blockData) override;
+  void UpdateState (xaya::SQLiteDatabase& db,
+                    const Json::Value& blockData) override;
 
-  Json::Value GetStateAsJson (sqlite3* db) override;
-
-  friend class SQLiteDatabase;
+  Json::Value GetStateAsJson (const xaya::SQLiteDatabase& db) override;
 
 public:
 
   /** Type for a callback that retrieves JSON data from the database.  */
-  using JsonStateFromDatabase = std::function<Json::Value (Database& db)>;
+  using JsonStateFromDatabase
+      = std::function<Json::Value (const xaya::SQLiteDatabase& db)>;
 
   XidGame () = default;
 
