@@ -1,4 +1,5 @@
 schema.cpp
 xid
+xid-light
 tests
 *.trs
