@@ -11,20 +11,26 @@ BUILT_SOURCES = $(RPC_STUBS)
 CLEANFILES = $(RPC_STUBS) schema.cpp
 
 libxid_la_CXXFLAGS = \
+  -I$(top_srcdir) \
   $(XAYAGAME_CFLAGS) \
   $(JSON_CFLAGS) $(GLOG_CFLAGS) $(SQLITE3_CFLAGS)
 libxid_la_LIBADD = \
+  $(top_builddir)/auth/libxidauth.la \
   $(XAYAGAME_LIBS) \
   $(JSON_LIBS) $(GLOG_LIBS) $(SQLITE3_LIBS)
 libxid_la_SOURCES = \
   database.cpp \
   gamestatejson.cpp \
   moveprocessor.cpp \
+  nonstaterpc.cpp \
+  rpcerrors.cpp \
   schema.cpp
 libxidheaders = \
   database.hpp \
   gamestatejson.hpp \
   moveprocessor.hpp \
+  nonstaterpc.hpp \
+  rpcerrors.hpp \
   schema.hpp
 
 xid_CXXFLAGS = \

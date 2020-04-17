@@ -1,4 +1,4 @@
-// Copyright (C) 2019 The Xaya developers
+// Copyright (C) 2019-2020 The Xaya developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -8,6 +8,7 @@
 #include "rpc-stubs/xidrpcserverstub.h"
 
 #include "logic.hpp"
+#include "nonstaterpc.hpp"
 
 #include <xayagame/game.hpp>
 #include <xayagame/rpc-stubs/xayawalletrpcclient.h>
@@ -28,6 +29,9 @@ class XidRpcServer : public XidRpcServerStub
 {
 
 private:
+
+  /** NonStateRpc instance we use to answer those calls.  */
+  NonStateRpc nonState;
 
   /** The underlying Game instance that manages everything.  */
   xaya::Game& game;
