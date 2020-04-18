@@ -88,13 +88,10 @@ it has the standard methods from its
 [`GameRpcServer`](https://github.com/xaya/libxayagame/blob/master/xayagame/gamerpcserver.hpp).
 Those methods can be used for very basic operations.
 
-#### <a id="getcurrentstate">`getcurrentstate`</a>
+#### <a id="getnullstate">`getnullstate`</a>
 
-This method retrieves information about the current state of XID.  This
-includes the [full state](#json-full) as well as general information about the
-state of the XID daemon (e.g. how far it is synced to the blockchain).
-
-The returned data is a JSON object of the following form:
+This method returns information about the current state of the XID process
+itself:
 
     {
       "gameid": "id",
@@ -102,7 +99,6 @@ The returned data is a JSON object of the following form:
       "state": STATE,
       "blockhash": BLOCK,
       "height": HEIGHT,
-      "gamestate": STATE
     }
 
 Here, the placeholders have the following meanings:
@@ -114,7 +110,16 @@ Here, the placeholders have the following meanings:
   synced to the latest block.
 - **`BLOCK`** is the block hash to which the current state corresponds.
 - **`HEIGHT`** is the block height of the current state.
-- **`STATE`** is the actual [game state as JSON object](#json-full).
+
+This is useful as the cheapest possible way to query the XID process
+about its health and state, without the need to extract any extra
+game-state data.
+
+#### <a id="getcurrentstate">`getcurrentstate`</a>
+
+This method returns general state information of XID similar to
+[`getnullstate`](#getnullstate), but also includes the
+[full state](#json-full) in an extra `gamestate` field.
 
 #### `waitforchange`
 
@@ -143,7 +148,7 @@ should be used, as they allow more efficient access to the required data.
 This method retrieves the data (if any) for **one specific name**.  The name
 in question has to be passed as a JSON string to the keyword argument `name`.
 Returned is the [state data for this name](#json-one-name) in the `data` field
-of a JSON object otherwise like [`getcurrentstate`](#getcurrentstate).
+of a JSON object otherwise like [`getnullstate`](#getnullstate).
 
 ### Authentication Credentials
 
@@ -202,8 +207,8 @@ This method verifies whether or not given credentials are valid.  It accepts
 `name`, `application` and `password` as string arguments.
 
 Since the validity depends on the current game state, it returns a JSON
-object similar to [`getcurrentstate`](#getcurrentstate).  Instead of the
-`gamestate` field, it has the verification data in `data`.
+object similar to [`getnullstate`](#getnullstate).  In addition,
+it has the verification data in `data`.
 
 This verification result is a JSON object itself, of the following form:
 
@@ -250,6 +255,6 @@ be started with `--allow_wallet`.
 The `name`, `application` and `data` have to be passed as arguments.
 They are defined as for [`getauthmessage`](#getauthmessage).
 
-Returned is a JSON object similar to [`getcurrentstate`](#getcurrentstate).
+Returned is a JSON object similar to [`getnullstate`](#getnullstate).
 In its `data` field, the constructed and fully signed password string
 is returned.

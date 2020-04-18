@@ -9,6 +9,11 @@
     "returns": {}
   },
   {
+    "name": "getnullstate",
+    "params": {},
+    "returns": {}
+  },
+  {
     "name": "waitforchange",
     "params": [ "known block" ],
     "returns": ""
