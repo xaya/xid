@@ -57,11 +57,13 @@ xidheaders = \
 
 xid_light_CXXFLAGS = \
   -I$(top_srcdir) \
-  $(JSON_CFLAGS) $(PROTOBUF_CFLAGS) $(GLOG_CFLAGS) $(GFLAGS_CFLAGS)
+  $(JSON_CFLAGS) $(CURL_CFLAGS) \
+  $(PROTOBUF_CFLAGS) $(GLOG_CFLAGS) $(GFLAGS_CFLAGS)
 xid_light_LDADD = \
   $(builddir)/libxid.la \
   $(top_builddir)/auth/libxidauth.la \
-  $(JSON_LIBS) $(PROTOBUF_LIBS) $(GLOG_LIBS) $(GFLAGS_LIBS)
+  $(JSON_LIBS) $(CURL_LIBS) \
+  $(PROTOBUF_LIBS) $(GLOG_LIBS) $(GFLAGS_LIBS)
 xid_light_SOURCES = light.cpp
 lightheaders = rpc-stubs/lightserverstub.h
 
