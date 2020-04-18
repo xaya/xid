@@ -48,5 +48,8 @@ More details can be found in specific documents:
   interface of the XID daemon.
 - [REST interface](doc/rest.md): The simple REST API that the XID daemon can
   optionally expose.
+- [Light mode](doc/light.md): How XID can be run in a "light mode", which is
+  just enough to support generating auth credentials and works without the
+  need to run a local Xaya Core.
 - [Authentication](doc/auth.md): How the authentication protocol with a signer
   key works.
