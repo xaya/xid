@@ -320,8 +320,16 @@ Json::Value
 LightServer::getnullstate ()
 {
   LOG (INFO) << "RPC method called: getnullstate";
-  /* FIXME: Implement based on REST API.  */
-  return Json::Value ();
+
+  std::ostringstream url;
+  url << FLAGS_rest_endpoint << "/state";
+
+  CurlRequest req;
+  if (!req.Request (url.str ()))
+    throw jsonrpc::JsonRpcException (jsonrpc::Errors::ERROR_RPC_INTERNAL_ERROR,
+                                     req.GetError ());
+
+  return req.GetData ();
 }
 
 Json::Value
