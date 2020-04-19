@@ -85,6 +85,13 @@ XidRpcServer::getcurrentstate ()
   return game.GetCurrentJsonState ();
 }
 
+Json::Value
+XidRpcServer::getnullstate ()
+{
+  LOG (INFO) << "RPC method called: getnullstate";
+  return game.GetNullJsonState ();
+}
+
 std::string
 XidRpcServer::waitforchange (const std::string& knownBlock)
 {
