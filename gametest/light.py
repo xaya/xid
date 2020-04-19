@@ -1,0 +1,192 @@
+#!/usr/bin/env python
+# coding=utf8
+
+# Copyright (C) 2020 The Xaya developers
+# Distributed under the MIT software license, see the accompanying
+# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
+"""
+Tests the light mode of xid.
+"""
+
+from xidtest import XidTest
+
+import jsonrpclib
+
+import BaseHTTPServer
+
+import logging
+import os
+import threading
+import subprocess
+import time
+
+
+class XidLight ():
+  """
+  A context manager that runs a xid-light process while active.
+  """
+
+  def __init__ (self, basedir, binary, port, restEndpoint):
+    self.log = logging.getLogger ("xid-light")
+
+    self.basedir = basedir
+    self.binary = binary
+    self.port = port
+    self.restEndpoint = restEndpoint
+
+    self.rpcurl = "http://localhost:%d" % self.port
+    self.proc = None
+
+  def __enter__ (self):
+    assert self.proc is None
+
+    self.log.info ("Starting xid-light at port %d" % self.port)
+
+    args = [self.binary]
+    args.extend (["--game_rpc_port", "%d" % self.port])
+    args.extend (["--rest_endpoint", self.restEndpoint])
+
+    envVars = dict (os.environ)
+    envVars["GLOG_log_dir"] = self.basedir
+
+    self.proc = subprocess.Popen (args, env=envVars)
+    self.rpc = jsonrpclib.Server (self.rpcurl)
+
+    # Wait a bit for the process to be up (which is fast anyway).
+    time.sleep (0.1)
+
+    return self
+
+  def __exit__ (self, exc, value, traceback):
+    assert self.proc is not None
+
+    self.log.info ("Stopping xid-light process...")
+    self.rpc._notify.stop ()
+    self.proc.wait ()
+    self.proc = None
+
+
+class DummyRequestHandler (BaseHTTPServer.BaseHTTPRequestHandler):
+  """
+  HTTP request handler that just returns given constant data.  This is
+  used to test what happens if the REST endpoint returns invalid JSON.
+  """
+
+  # Data to return to requests (as string)
+  responseData = "invalid JSON"
+
+  def do_GET (self):
+    self.send_response (200)
+    self.send_header ("Content-Type", "application/json")
+    self.end_headers ()
+    self.wfile.write (self.responseData)
+
+
+class DummyServer ():
+  """
+  Context handler that runs a simple HTTP server.  The server just returns
+  some dummy data to all requests.  We use that to verify what xid-light
+  does if it receives invalid JSON from the REST endpoint.
+  """
+
+  def __init__ (self, port):
+    self.port = port
+    self.srv = None
+    self.runner = None
+
+  def __enter__ (self):
+    assert self.srv is None
+    assert self.runner is None
+
+    self.srv = BaseHTTPServer.HTTPServer (("localhost", self.port),
+                                          DummyRequestHandler)
+
+    self.runner = threading.Thread (target=self.srv.serve_forever,
+                                    kwargs={"poll_interval": 0.1})
+    self.runner.start ()
+
+  def __exit__ (self, exc, value, traceback):
+    assert self.srv is not None
+    assert self.runner is not None
+
+    self.srv.shutdown ()
+    self.runner.join ()
+    self.runner = None
+    self.srv.server_close ()
+    self.srv = None
+
+
+class LightModeTest (XidTest):
+
+  def startLight (self, endpoint):
+    """
+    Starts a new xid-light process (as context manager) at our chosen
+    light port and with the given REST API endpoint.
+    """
+
+    top_builddir = os.getenv ("top_builddir")
+    if top_builddir is None:
+      top_builddir = ".."
+    binary = os.path.join (top_builddir, "src", "xid-light")
+
+    return XidLight (self.basedir, binary, self.lightPort, endpoint)
+
+  def run (self):
+    self.generate (101)
+    addr = self.rpc.xaya.getnewaddress ("", "legacy")
+    self.sendMove ("domob", {"s": {"g": [addr]}})
+    self.generate (1)
+
+    self.lightPort = self.basePort + 10
+    restPort = self.basePort + 11
+    invalidPort = self.basePort + 12
+    dummyPort = self.basePort + 13
+    restEndpoint = "http://localhost:%d" % restPort
+
+    self.mainLogger.info ("Enabling the REST interface...")
+    self.stopGameDaemon ()
+    self.startGameDaemon (extraArgs=["--rest_port=%d" % restPort])
+    self.syncGame ()
+
+    self.mainLogger.info ("Testing light mode with local REST endpoint...")
+    with self.startLight (restEndpoint) as l:
+      self.assertEqual (l.rpc.getnullstate (), self.rpc.game.getnullstate ())
+      for name in ["domob", "foo/bar", "", "abc def", u"kräfti"]:
+        self.assertEqual (l.rpc.getnamestate (name=name),
+                          self.rpc.game.getnamestate (name=name))
+
+      authmsg = l.rpc.getauthmessage (name="domob", application="app", data={})
+      sgn = self.rpc.xaya.signmessage (addr, authmsg["authmessage"])
+      pwd = l.rpc.setauthsignature (password=authmsg["password"], signature=sgn)
+      self.assertEqual (self.getRpc ("verifyauth", name="domob",
+                                     application="app", password=pwd), {
+        "valid": True,
+        "state": "valid",
+        "expiry": None,
+        "extra": {},
+      })
+
+    self.mainLogger.info ("Testing connection error on REST endpoint...")
+    with self.startLight (restEndpoint + "/invalid") as l:
+      self.expectError (-32603, ".*HTTP.*404.*", l.rpc.getnullstate)
+    invalidConnection = "http://localhost:%d" % invalidPort
+    with self.startLight (invalidConnection) as l:
+      self.expectError (-32603, ".*Connection refused.*", l.rpc.getnullstate)
+
+    self.mainLogger.info ("Testing REST endpoint returning invalid JSON...")
+    with DummyServer (dummyPort), \
+         self.startLight ("http://localhost:%d" % dummyPort) as l:
+      self.expectError (-32603, ".*JSON parser.*", l.rpc.getnullstate)
+
+    self.mainLogger.info ("Testing with remote REST endpoint and TLS...")
+    with self.startLight ("https://seeder.xaya.io") as l:
+      self.assertEqual (l.rpc.getnullstate ()["chain"], "main")
+
+    self.mainLogger.info ("Testing TLS error with the endpoint...")
+    with self.startLight ("https://chat.xaya.io") as l:
+      self.expectError (-32603, ".*cURL error.*SSL.*", l.rpc.getnullstate)
+
+
+if __name__ == "__main__":
+  LightModeTest ().main ()

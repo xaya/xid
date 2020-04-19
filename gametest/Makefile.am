@@ -7,6 +7,7 @@ REGTESTS = \
   auth.py \
   authwithwallet.py \
   getnamestate.py \
+  light.py \
   rest.py \
   signer_update.py
 

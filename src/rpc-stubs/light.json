@@ -1,0 +1,40 @@
+[
+  {
+    "name": "stop",
+    "params": {}
+  },
+
+  {
+    "name": "getnullstate",
+    "params": {},
+    "returns": {}
+  },
+  {
+    "name": "getnamestate",
+    "params":
+      {
+        "name": "foobar"
+      },
+    "returns": {}
+  },
+
+  {
+    "name": "getauthmessage",
+    "params":
+      {
+        "name": "foobar",
+        "application": "app",
+        "data": {}
+      },
+    "returns": {}
+  },
+  {
+    "name": "setauthsignature",
+    "params":
+      {
+        "password": "base64",
+        "signature": "signature"
+      },
+    "returns": "password"
+  }
+]
