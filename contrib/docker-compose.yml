@@ -1,0 +1,53 @@
+# This is an example Docker Compose configuration file that runs
+# Xaya Core and a XID instance connected to it.  The XID JSON-RPC port
+# is exposed at 8400 and its REST interface at port 9090.
+#
+# For production use, this file likely should be adjusted according to the
+# actual requirements and application.
+
+version: "3"
+
+services:
+
+  core:
+    image: xaya/xaya
+    volumes:
+      - core:/var/lib/xaya
+    networks:
+      core:
+        ipv4_address: 10.0.0.100
+    environment:
+      HOST: "10.0.0.100"
+      RPC_PORT: 8396
+      RPC_ALLOW_IP: "10.0.0.0/24"
+      RPC_PASSWORD: "password"
+
+  xid:
+    image: xaya/xid
+    volumes:
+      - xid-data:/var/lib/xayagame
+      - xid-logs:/var/log/xid
+    networks:
+      - core
+    links:
+      - core
+    ports:
+      - "8400:8400"
+      - "9090:8000"
+    command: [
+      "--xaya_rpc_url=http://xaya:password@core:8396/",
+      "--xaya_rpc_wait",
+      "--game_rpc_port=8400", "--nogame_rpc_listen_locally",
+      "--rest_port=8000",
+    ]
+
+networks:
+  core:
+    ipam:
+      config:
+        - subnet: "10.0.0.0/24"
+
+volumes:
+  core:
+  xid-data:
+  xid-logs:
