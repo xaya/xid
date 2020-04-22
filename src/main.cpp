@@ -1,4 +1,4 @@
-// Copyright (C) 2019 The Xaya developers
+// Copyright (C) 2020 The Xaya developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -30,6 +30,9 @@ namespace
 
 DEFINE_string (xaya_rpc_url, "",
                "URL at which Xaya Core's JSON-RPC interface is available");
+DEFINE_bool (xaya_rpc_wait, false,
+             "whether to wait on startup for Xaya Core to be available");
+
 DEFINE_int32 (game_rpc_port, 0,
               "the port at which xid's JSON-RPC server will be started"
               " (if non-zero)");
@@ -134,6 +137,7 @@ main (int argc, char** argv)
 
   xaya::GameDaemonConfiguration config;
   config.XayaRpcUrl = FLAGS_xaya_rpc_url;
+  config.XayaRpcWait = FLAGS_xaya_rpc_wait;
   if (FLAGS_game_rpc_port != 0)
     {
       config.GameRpcServer = xaya::RpcServerType::HTTP;
