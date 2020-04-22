@@ -36,6 +36,8 @@ DEFINE_bool (xaya_rpc_wait, false,
 DEFINE_int32 (game_rpc_port, 0,
               "the port at which xid's JSON-RPC server will be started"
               " (if non-zero)");
+DEFINE_bool (game_rpc_listen_locally, true,
+             "whether the game daemon's JSON-RPC server should listen locally");
 
 DEFINE_int32 (rest_port, 0,
               "if non-zero, the port at which the REST interface should run");
@@ -142,6 +144,7 @@ main (int argc, char** argv)
     {
       config.GameRpcServer = xaya::RpcServerType::HTTP;
       config.GameRpcPort = FLAGS_game_rpc_port;
+      config.GameRpcListenLocally = FLAGS_game_rpc_listen_locally;
     }
   config.EnablePruning = FLAGS_enable_pruning;
   config.DataDirectory = FLAGS_datadir;
