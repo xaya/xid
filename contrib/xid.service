@@ -1,0 +1,64 @@
+# Example service file for running a xid daemon.  It will expose its
+# REST API on port 9090, and the JSON-RPC port (locally-only) on 8400.
+
+[Unit]
+Description=XID daemon
+After=network.target xayad.service
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Environment="XAYA_RPC_PASSWORD=password"
+Environment="GLOG_log_dir=/var/log/xid"
+ExecStart=/usr/bin/xid \
+    --xaya_rpc_url="http://xaya:${XAYA_RPC_PASSWORD}@localhost:8396" \
+    --game_rpc_port=8400 --game_rpc_listen_locally \
+    --rest_port=9090 \
+    --enable_pruning=1000 \
+    --datadir=/var/lib/xid
+
+# Process management
+####################
+
+Type=simple
+Restart=on-failure
+TimeoutStopSec=60
+
+# Directory creation and permissions
+####################################
+
+# Run as xid:xid
+User=xid
+Group=xid
+
+# /var/log/xid
+LogsDirectory=xid
+LogsDirectoryMode=0710
+
+# /var/lib/xid
+StateDirectory=xid
+StateDirectoryMode=0710
+
+# Hardening measures
+####################
+
+# Provide a private /tmp and /var/tmp.
+PrivateTmp=true
+
+# Mount /usr, /boot/ and /etc read-only for the process.
+ProtectSystem=full
+
+# Deny access to /home, /root and /run/user
+ProtectHome=true
+
+# Disallow the process and all of its children to gain
+# new privileges through execve().
+NoNewPrivileges=true
+
+# Use a new /dev namespace only populated with API pseudo devices
+# such as /dev/null, /dev/zero and /dev/random.
+PrivateDevices=true
+
+# Deny the creation of writable and executable memory mappings.
+MemoryDenyWriteExecute=true
