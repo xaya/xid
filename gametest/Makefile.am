@@ -1,3 +1,7 @@
+AM_TESTS_ENVIRONMENT = \
+  top_builddir=$(top_builddir) \
+  top_srcdir=$(top_srcdir)
+
 TEST_LIBRARY = \
   xidtest.py
 

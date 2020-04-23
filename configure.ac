@@ -46,6 +46,7 @@ PKG_CHECK_MODULES([PROTOBUF], [protobuf])
 AC_CONFIG_FILES([
   Makefile \
   auth/Makefile \
+  data/Makefile \
   ejabberd/Makefile \
   gametest/Makefile \
   src/Makefile

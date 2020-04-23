@@ -32,6 +32,9 @@ DEFINE_int32 (game_rpc_port, 0,
 DEFINE_string (rest_endpoint, "",
                "the endpoint of the REST API that is used to query state");
 
+DEFINE_string (cafile, "",
+               "if set, use this file as CA bundle instead of cURL's default");
+
 namespace xid
 {
 namespace
@@ -196,6 +199,18 @@ CurlRequest::CurlRequest ()
   /* Enforce TLS verification.  */
   SetOption (CURLOPT_SSL_VERIFYPEER, 1L);
   SetOption (CURLOPT_SSL_VERIFYHOST, 2L);
+
+  /* Set a CAINFO path if we have an explicit one.  */
+  if (FLAGS_cafile.empty ())
+    {
+      LOG_FIRST_N (WARNING, 1) << "Using default cURL CA bundle";
+    }
+  else
+    {
+      LOG_FIRST_N (INFO, 1) << "Using CA bundle from " << FLAGS_cafile;
+      SetOption (CURLOPT_CAINFO, FLAGS_cafile.c_str ());
+      SetOption (CURLOPT_CAPATH, nullptr);
+    }
 
   /* Install our write callback.  */
   SetOption (CURLOPT_WRITEFUNCTION, &WriteCallback);

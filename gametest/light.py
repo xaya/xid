@@ -27,13 +27,14 @@ class XidLight ():
   A context manager that runs a xid-light process while active.
   """
 
-  def __init__ (self, basedir, binary, port, restEndpoint):
+  def __init__ (self, basedir, binary, port, restEndpoint, cafile):
     self.log = logging.getLogger ("xid-light")
 
     self.basedir = basedir
     self.binary = binary
     self.port = port
     self.restEndpoint = restEndpoint
+    self.cafile = cafile
 
     self.rpcurl = "http://localhost:%d" % self.port
     self.proc = None
@@ -46,6 +47,7 @@ class XidLight ():
     args = [self.binary]
     args.extend (["--game_rpc_port", "%d" % self.port])
     args.extend (["--rest_endpoint", self.restEndpoint])
+    args.extend (["--cafile", self.cafile])
 
     envVars = dict (os.environ)
     envVars["GLOG_log_dir"] = self.basedir
@@ -130,7 +132,12 @@ class LightModeTest (XidTest):
       top_builddir = ".."
     binary = os.path.join (top_builddir, "src", "xid-light")
 
-    return XidLight (self.basedir, binary, self.lightPort, endpoint)
+    top_srcdir = os.getenv ("top_srcdir")
+    if top_srcdir is None:
+      top_srcdir = ".."
+    cafile = os.path.join (top_srcdir, "data", "letsencrypt.pem")
+
+    return XidLight (self.basedir, binary, self.lightPort, endpoint, cafile)
 
   def run (self):
     self.generate (101)
