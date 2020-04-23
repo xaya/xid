@@ -29,9 +29,11 @@
 
 DEFINE_int32 (game_rpc_port, 0,
               "the port at which xid's JSON-RPC server will be started");
+DEFINE_bool (game_rpc_listen_locally, true,
+             "whether the game daemon's JSON-RPC server should listen locally");
+
 DEFINE_string (rest_endpoint, "",
                "the endpoint of the REST API that is used to query state");
-
 DEFINE_string (cafile, "",
                "if set, use this file as CA bundle instead of cURL's default");
 
@@ -392,6 +394,8 @@ main (int argc, char** argv)
   xid::MainLoop loop;
 
   jsonrpc::HttpServer http(FLAGS_game_rpc_port);
+  if (FLAGS_game_rpc_listen_locally)
+    http.BindLocalhost ();
   xid::LightServer srv(loop, http);
 
   LOG (INFO) << "Using REST API at " << FLAGS_rest_endpoint;
