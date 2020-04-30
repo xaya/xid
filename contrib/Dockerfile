@@ -3,23 +3,33 @@
 # ordinary JSON-RPC interface.
 
 FROM xaya/libxayagame AS build
-RUN apt-get update && apt-get install -y \
+RUN apt-get install -y \
   autoconf \
   autoconf-archive \
   automake \
+  build-essential \
   libtool \
+  libcurl4-openssl-dev \
+  libmicrohttpd-dev \
   pkg-config \
   protobuf-compiler
 
 # Build and install xid.
 WORKDIR /usr/src/xid
 COPY . .
-RUN ./autogen.sh && ./configure && make && make install
+RUN make distclean || true
+RUN ./autogen.sh && ./configure --disable-shared && make && make install-strip
 
-# Copy the stuff we built to the final image.
+# Copy the stuff we built to the final image.  We mainly need the xid
+# GSP binary, but also provide the xidauth.py script so it can be extracted
+# (or used) as needed to build an ejabberd image.
 FROM xaya/libxayagame
-COPY --from=build /usr/local /usr/local/
-RUN ldconfig
+COPY --from=build /usr/local/bin/xid /usr/local/bin/
+COPY --from=build /usr/src/xid/ejabberd/xidauth.py /usr/local/share/
+RUN apt-get install -y \
+  libcurl4 \
+  libmicrohttpd12 \
+  && ldconfig
 LABEL description="XAYA ID game-state processor"
 
 # Define the runtime environment for XID.
