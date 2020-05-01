@@ -15,9 +15,9 @@ services:
       - core:/var/lib/xaya
     networks:
       core:
-        ipv4_address: 10.0.0.100
+        ipv4_address: 10.0.0.101
     environment:
-      HOST: "10.0.0.100"
+      HOST: "10.0.0.101"
       RPC_PORT: 8396
       RPC_ALLOW_IP: "10.0.0.0/24"
       RPC_PASSWORD: "password"
@@ -25,8 +25,8 @@ services:
   xid:
     image: xaya/xid
     volumes:
-      - xid-data:/var/lib/xayagame
-      - xid-logs:/var/log/xid
+      - xid-data:/xayagame
+      - xid-logs:/log
     networks:
       - core
     links:
@@ -35,7 +35,7 @@ services:
       - "8400:8400"
       - "9090:8000"
     command: [
-      "--xaya_rpc_url=http://xaya:password@core:8396/",
+      "--xaya_rpc_url=http://xaya:password@10.0.0.101:8396/",
       "--xaya_rpc_wait",
       "--game_rpc_port=8400", "--nogame_rpc_listen_locally",
       "--rest_port=8000",

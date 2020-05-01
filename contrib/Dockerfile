@@ -8,6 +8,7 @@ RUN apt-get install -y \
   autoconf-archive \
   automake \
   build-essential \
+  git \
   libtool \
   libcurl4-openssl-dev \
   libmicrohttpd-dev \
@@ -18,30 +19,26 @@ RUN apt-get install -y \
 WORKDIR /usr/src/xid
 COPY . .
 RUN make distclean || true
-RUN ./autogen.sh && ./configure --disable-shared && make && make install-strip
+RUN ./autogen.sh && ./configure && make && make install-strip
+RUN ldconfig
 
-# Copy the stuff we built to the final image.  We mainly need the xid
-# GSP binary, but also provide the xidauth.py script so it can be extracted
-# (or used) as needed to build an ejabberd image.
-FROM xaya/libxayagame
-COPY --from=build /usr/local/bin/xid /usr/local/bin/
-COPY --from=build /usr/src/xid/ejabberd/xidauth.py /usr/local/share/
-RUN apt-get install -y \
-  libcurl4 \
-  libmicrohttpd12 \
-  && ldconfig
+# Collect just the minimal required stuff to run xid (binary plus
+# necessary shared libraries).
+WORKDIR /jail
+RUN mkdir bin && cp /usr/local/bin/xid bin/
+RUN cpld bin/xid lib64
+RUN mkdir xayagame log
+
+# Build the final image.
+FROM scratch
+COPY --from=build /jail /
+ENV LD_LIBRARY_PATH=/lib64/
 LABEL description="XAYA ID game-state processor"
-
-# Define the runtime environment for XID.
-RUN useradd xid \
-  && mkdir -p /var/lib/xayagame && mkdir -p /var/log/xid \
-  && chown xid:xid -R /var/lib/xayagame /var/log/xid
-USER xid
-VOLUME ["/var/lib/xayagame", "/var/log/xid"]
-ENV GLOG_log_dir /var/log/xid
+VOLUME ["/xayagame", "/log"]
+ENV GLOG_log_dir /log
 ENTRYPOINT [ \
-  "/usr/local/bin/xid", \
-  "--datadir=/var/lib/xayagame", \
+  "/bin/xid", \
+  "--datadir=/xayagame", \
   "--enable_pruning=1000" \
 ]
 CMD []
