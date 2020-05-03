@@ -1,7 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # coding=utf8
 
-# Copyright (C) 2019 The Xaya developers
+# Copyright (C) 2019-2020 The Xaya developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -13,8 +13,9 @@ from xidtest import XidTest
 
 import codecs
 import json
-import urllib
-import urllib2
+import urllib.error
+import urllib.parse
+import urllib.request
 
 
 class GetNameStateTest (XidTest):
@@ -27,9 +28,9 @@ class GetNameStateTest (XidTest):
 
     try:
       url = "http://localhost:%d%s" % (self.restPort, path)
-      urllib2.urlopen (url, **kwargs)
+      urllib.request.urlopen (url, **kwargs)
       raise AssertionError ("expected HTTP error")
-    except urllib2.HTTPError as exc:
+    except urllib.error.HTTPError as exc:
       self.assertEqual (exc.code, code)
 
   def run (self):
@@ -45,7 +46,7 @@ class GetNameStateTest (XidTest):
     self.startGameDaemon (extraArgs=["--rest_port=%d" % self.restPort])
 
     self.mainLogger.info ("Testing error cases...")
-    self.expectError (405, "/state", data="POST data")
+    self.expectError (405, "/state", data=b"POST data")
     self.expectError (404, "")
     self.expectError (404, "/")
     self.expectError (404, "/foo")
@@ -53,9 +54,9 @@ class GetNameStateTest (XidTest):
 
     self.mainLogger.info ("Testing name retrieval...")
     for name in ["domob", "foo/bar", "", "abc def", u"kräfti"]:
-      encoded = urllib.quote (codecs.encode (name, "utf-8"))
+      encoded = urllib.parse.quote (codecs.encode (name, "utf-8"))
       url = "http://localhost:%d/name/%s" % (self.restPort, encoded)
-      resp = urllib2.urlopen (url)
+      resp = urllib.request.urlopen (url)
       self.assertEqual (resp.getcode (), 200)
       res = json.loads (resp.read ())
       self.assertEqual (res["data"]["name"], name)

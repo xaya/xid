@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-# Copyright (C) 2019 The Xaya developers
+# Copyright (C) 2019-2020 The Xaya developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -34,7 +34,7 @@ class EjabberdXidAuth (object):
 
   def __init__ (self, serverNames, xidRpcUrl, logHandler):
     self.serverNames = serverNames
-    self.xidRpc = jsonrpclib.Server (xidRpcUrl)
+    self.xidRpc = jsonrpclib.ServerProxy (xidRpcUrl)
 
     if logHandler is not None:
       self.setupLogging (logHandler)
@@ -56,7 +56,7 @@ class EjabberdXidAuth (object):
     length = inp.read (2)
     (n,) = struct.unpack (">h", length)
 
-    cmd = inp.read (n)
+    cmd = inp.read (n).decode ("ascii")
     self.log.debug ("Got command: %s" % cmd)
 
     return cmd.split (":")
@@ -197,7 +197,7 @@ class EjabberdXidAuth (object):
     """
 
     servers = ""
-    for s, a in self.serverNames.iteritems ():
+    for s, a in self.serverNames.items ():
       servers += "\n  %s: %s" % (s, a)
     self.log.info ("Running xid authentication script for servers:" + servers)
 
@@ -238,4 +238,4 @@ if __name__ == "__main__":
 
   auth = EjabberdXidAuth ({args.servername: args.application}, args.xid_rpc_url,
                           logging.FileHandler (args.logfile))
-  auth.run (sys.stdin, sys.stdout)
+  auth.run (sys.stdin.buffer, sys.stdout.buffer)

@@ -1,7 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # coding=utf8
 
-# Copyright (C) 2019 The Xaya developers
+# Copyright (C) 2019-2020 The Xaya developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -158,7 +158,8 @@ class AuthTest (XidTest):
     notExpired = 2000000000
 
     # Invalid encoded data.
-    for pwd in ["invalid base64", base64.b64encode (bytes ([0, 20]))]:
+    for pwd in ["invalid base64",
+                base64.b64encode (bytes ([0, 20])).decode ("ascii")]:
       res = self.getRpc ("verifyauth", name="domob", application="app",
                          password=pwd)
       self.assertEqual (res, {

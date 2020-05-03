@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-# Copyright (C) 2019 The Xaya developers
+# Copyright (C) 2019-2020 The Xaya developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -22,7 +22,7 @@ class AddressUpdateTest (XidTest):
     nmState = self.getGameState ()["names"]
     self.assertEqual (len (nmState), len (expected))
 
-    for nm, s in nmState.iteritems ():
+    for nm, s in nmState.items ():
       assert nm in expected
       self.assertEqual (s["addresses"], expected[nm])
 

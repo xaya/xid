@@ -1,7 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # coding=utf8
 
-# Copyright (C) 2019 The Xaya developers
+# Copyright (C) 2019-2020 The Xaya developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -12,7 +12,6 @@ import codecs
 import logging
 import os
 import os.path
-import string
 import struct
 import subprocess
 import time
@@ -47,7 +46,7 @@ class XidAuthTest (XidTest):
     """
 
     utf8Bytes = codecs.encode (name, "utf-8")
-    hexStr = codecs.encode (utf8Bytes, "hex")
+    hexStr = codecs.encode (utf8Bytes, "hex").decode ("ascii")
 
     return "x-" + hexStr
 
@@ -68,12 +67,12 @@ class XidAuthTest (XidTest):
     and verifies that the boolean result is as expected.
     """
 
-    cmdStr = string.join (parts, ":")
+    cmdStr = ":".join (parts)
     self.log.debug ("Sending command: %s" % cmdStr)
 
     length = struct.pack (">h", len (cmdStr))
     self.proc.stdin.write (length)
-    self.proc.stdin.write (cmdStr)
+    self.proc.stdin.write (cmdStr.encode ("ascii"))
     self.proc.stdin.flush ()
 
     res = self.proc.stdout.read (4)
@@ -179,7 +178,7 @@ class XidAuthTest (XidTest):
     cmd.append ("--application=%s" % self.app)
     cmd.append ("--logfile=%s" % os.path.join (self.basedir, "xidauth.log"))
     try:
-      self.log.info ("Starting process: %s" % string.join (cmd, " "))
+      self.log.info ("Starting process: %s" % " ".join (cmd))
       self.proc = subprocess.Popen (cmd, stdin=subprocess.PIPE,
                                     stdout=subprocess.PIPE)
       time.sleep (1)

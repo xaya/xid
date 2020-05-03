@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # coding=utf8
 
 # Copyright (C) 2020 The Xaya developers
@@ -13,8 +13,7 @@ from xidtest import XidTest
 
 import jsonrpclib
 
-import BaseHTTPServer
-
+import http.server
 import logging
 import os
 import threading
@@ -53,7 +52,7 @@ class XidLight ():
     envVars["GLOG_log_dir"] = self.basedir
 
     self.proc = subprocess.Popen (args, env=envVars)
-    self.rpc = jsonrpclib.Server (self.rpcurl)
+    self.rpc = jsonrpclib.ServerProxy (self.rpcurl)
 
     # Wait a bit for the process to be up (which is fast anyway).
     time.sleep (0.1)
@@ -69,7 +68,7 @@ class XidLight ():
     self.proc = None
 
 
-class DummyRequestHandler (BaseHTTPServer.BaseHTTPRequestHandler):
+class DummyRequestHandler (http.server.BaseHTTPRequestHandler):
   """
   HTTP request handler that just returns given constant data.  This is
   used to test what happens if the REST endpoint returns invalid JSON.
@@ -82,7 +81,7 @@ class DummyRequestHandler (BaseHTTPServer.BaseHTTPRequestHandler):
     self.send_response (200)
     self.send_header ("Content-Type", "application/json")
     self.end_headers ()
-    self.wfile.write (self.responseData)
+    self.wfile.write (self.responseData.encode ("ascii"))
 
 
 class DummyServer ():
@@ -101,8 +100,8 @@ class DummyServer ():
     assert self.srv is None
     assert self.runner is None
 
-    self.srv = BaseHTTPServer.HTTPServer (("localhost", self.port),
-                                          DummyRequestHandler)
+    self.srv = http.server.HTTPServer (("localhost", self.port),
+                                       DummyRequestHandler)
 
     self.runner = threading.Thread (target=self.srv.serve_forever,
                                     kwargs={"poll_interval": 0.1})
