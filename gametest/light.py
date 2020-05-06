@@ -186,11 +186,11 @@ class LightModeTest (XidTest):
       self.expectError (-32603, ".*JSON parser.*", l.rpc.getnullstate)
 
     self.mainLogger.info ("Testing with remote REST endpoint and TLS...")
-    with self.startLight ("https://seeder.xaya.io") as l:
+    with self.startLight ("https://xid.xaya.io") as l:
       self.assertEqual (l.rpc.getnullstate ()["chain"], "main")
 
     self.mainLogger.info ("Testing TLS error with the endpoint...")
-    with self.startLight ("https://chat.xaya.io") as l:
+    with self.startLight ("https://seeder.xaya.io") as l:
       self.expectError (-32603, ".*cURL error.*SSL.*", l.rpc.getnullstate)
 
 
