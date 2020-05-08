@@ -3,40 +3,36 @@
 # ordinary JSON-RPC interface.
 
 FROM xaya/libxayagame AS build
-RUN apt-get install -y \
+RUN apk add --no-cache \
   autoconf \
   autoconf-archive \
   automake \
-  build-essential \
-  git \
+  build-base \
+  gflags-dev \
   libtool \
-  pkg-config \
-  protobuf-compiler
+  pkgconfig
 
 # Build and install xid.
 WORKDIR /usr/src/xid
 COPY . .
 RUN make distclean || true
 RUN ./autogen.sh && ./configure && make && make install-strip
-RUN ldconfig
 
 # Collect just the minimal required stuff to run xid (binary plus
 # necessary shared libraries).
 WORKDIR /jail
 RUN mkdir bin && cp /usr/local/bin/xid bin/
 RUN cpld bin/xid lib64
-RUN mkdir xayagame log
 
 # Build the final image.
-FROM scratch
-COPY --from=build /jail /
-ENV LD_LIBRARY_PATH=/lib64/
+FROM alpine
+COPY --from=build /jail /usr/local/
+ENV LD_LIBRARY_PATH "/usr/local/lib64"
 LABEL description="XAYA ID game-state processor"
 VOLUME ["/xayagame", "/log"]
 ENV GLOG_log_dir /log
 ENTRYPOINT [ \
-  "/bin/xid", \
+  "/usr/local/bin/xid", \
   "--datadir=/xayagame", \
   "--enable_pruning=1000" \
 ]
-CMD []

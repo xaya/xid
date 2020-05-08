@@ -14,7 +14,7 @@ services:
     volumes:
       - core:/var/lib/xaya
     networks:
-      core:
+      default:
         ipv4_address: 10.0.0.101
     environment:
       HOST: "10.0.0.101"
@@ -26,15 +26,13 @@ services:
     volumes:
       - xid-data:/xayagame
       - xid-logs:/log
-    networks:
-      - core
     links:
       - core
     ports:
       - "8400:8400"
       - "9090:8000"
     command: [
-      "--xaya_rpc_url=http://xaya:password@10.0.0.101:8396/",
+      "--xaya_rpc_url=http://xaya:password@core:8396/",
       "--xaya_rpc_wait",
       "--game_rpc_port=8400", "--nogame_rpc_listen_locally",
       "--rest_port=8000",
@@ -42,7 +40,7 @@ services:
     ]
 
 networks:
-  core:
+  default:
     ipam:
       config:
         - subnet: "10.0.0.0/24"
