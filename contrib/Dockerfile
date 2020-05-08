@@ -10,8 +10,6 @@ RUN apt-get install -y \
   build-essential \
   git \
   libtool \
-  libcurl4-openssl-dev \
-  libmicrohttpd-dev \
   pkg-config \
   protobuf-compiler
 
