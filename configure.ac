@@ -1,4 +1,4 @@
-AC_INIT([xid], [0.1])
+AC_INIT([xid], [1.0])
 AM_INIT_AUTOMAKE
 
 AC_CONFIG_MACRO_DIR([m4])
@@ -26,6 +26,8 @@ CXXFLAGS="${CXXFLAGS} -DGLOG_NO_ABBREVIATED_SEVERITIES"
 
 PKG_PROG_PKG_CONFIG
 
+# The commit of libxayagame we use for xid 1.0 is
+# ec99317109e87b64fe655b2a8ec9d505a1916a98.
 PKG_CHECK_MODULES([XAYAGAME], [libxayagame])
 PKG_CHECK_MODULES([XAYAUTIL], [libxayautil])
 PKG_CHECK_MODULES([SQLITE3], [sqlite3])
