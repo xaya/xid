@@ -1,4 +1,4 @@
-AC_INIT([xid], [0.1])
+AC_INIT([xid], [1.1])
 AM_INIT_AUTOMAKE
 
 AC_CONFIG_MACRO_DIR([m4])
