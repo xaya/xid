@@ -100,6 +100,10 @@ class EjabberdXidAuth (object):
         self.log.warning ("Invalid XMPP name: %s" % name)
         return None
 
+    if len (hexPart) % 2 != 0:
+      self.log.warning ("Odd-length hex part: %s" % name)
+      return None
+
     utf8Bytes = codecs.decode (hexPart, "hex")
     xayaName = codecs.decode (utf8Bytes, "utf-8")
 

@@ -46,6 +46,9 @@ class NameCodingTest (unittest.TestCase):
 
       # Hex-encoded name that is actually simple.
       "x-616263",
+
+      # Hex-encoded name with an odd number of characters.
+      "x-a",
     ]
     for n in invalid:
       self.assertEqual (self.auth.decodeXmppName (n), None)
