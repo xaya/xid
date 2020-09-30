@@ -75,11 +75,14 @@ class DummyRequestHandler (http.server.BaseHTTPRequestHandler):
   """
 
   # Data to return to requests (as string)
-  responseData = "invalid JSON"
+  responseData = ""
+
+  # Content type to return
+  responseType = ""
 
   def do_GET (self):
     self.send_response (200)
-    self.send_header ("Content-Type", "application/json")
+    self.send_header ("Content-Type", self.responseType)
     self.end_headers ()
     self.wfile.write (self.responseData.encode ("ascii"))
 
@@ -180,7 +183,16 @@ class LightModeTest (XidTest):
     with self.startLight (invalidConnection) as l:
       self.expectError (-32603, ".*Connection refused.*", l.rpc.getnullstate)
 
+    self.mainLogger.info ("Testing REST endpoint returning not JSON...")
+    DummyRequestHandler.responseType = "text/plain"
+    DummyRequestHandler.responseData = "{}"
+    with DummyServer (dummyPort), \
+         self.startLight ("http://localhost:%d" % dummyPort) as l:
+      self.expectError (-32603, ".*expected JSON.*", l.rpc.getnullstate)
+
     self.mainLogger.info ("Testing REST endpoint returning invalid JSON...")
+    DummyRequestHandler.responseType = "application/json"
+    DummyRequestHandler.responseData = "invalid JSON"
     with DummyServer (dummyPort), \
          self.startLight ("http://localhost:%d" % dummyPort) as l:
       self.expectError (-32603, ".*JSON parser.*", l.rpc.getnullstate)
