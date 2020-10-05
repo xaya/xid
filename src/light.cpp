@@ -116,7 +116,9 @@ public:
 
   explicit LightServer (MainLoop& l, jsonrpc::AbstractServerConnector& conn)
     : LightServerStub(conn), loop(l), client(FLAGS_rest_endpoint)
-  {}
+  {
+    client.SetCaFile (FLAGS_cafile);
+  }
 
   void stop () override;
   Json::Value getnullstate () override;
