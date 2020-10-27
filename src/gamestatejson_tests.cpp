@@ -1,4 +1,4 @@
-// Copyright (C) 2019 The Xaya developers
+// Copyright (C) 2019-2020 The Xaya developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -45,7 +45,7 @@ TEST_F (GetNameStateTests, Empty)
 
 TEST_F (GetNameStateTests, NameFiltering)
 {
-  Execute (R"(
+  GetDb ().Execute (R"(
     INSERT INTO `signers` (`name`, `application`, `address`)
       VALUES ("domob", NULL, "global");
     INSERT INTO `addresses` (`name`, `key`, `address`)
@@ -61,7 +61,7 @@ TEST_F (GetNameStateTests, NameFiltering)
 
 TEST_F (GetNameStateTests, Signers)
 {
-  Execute (R"(
+  GetDb ().Execute (R"(
     INSERT INTO `signers` (`name`, `application`, `address`)
       VALUES ("domob", NULL, "global 1"),
              ("domob", NULL, "global 2"),
@@ -87,7 +87,7 @@ TEST_F (GetNameStateTests, Signers)
 
 TEST_F (GetNameStateTests, Addresses)
 {
-  Execute (R"(
+  GetDb ().Execute (R"(
     INSERT INTO `addresses` (`name`, `key`, `address`)
       VALUES ("domob", "btc", "1domob"),
              ("domob", "eth", "0xDomob"),
@@ -130,7 +130,7 @@ TEST_F (GetFullStateTests, Empty)
 
 TEST_F (GetFullStateTests, WithNames)
 {
-  Execute (R"(
+  GetDb ().Execute (R"(
     INSERT INTO `signers` (`name`, `application`, `address`)
       VALUES ("domob", NULL, "domob 1"),
              ("domob", NULL, "domob 2"),

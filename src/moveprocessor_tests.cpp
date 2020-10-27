@@ -4,7 +4,6 @@
 
 #include "moveprocessor.hpp"
 
-#include "database.hpp"
 #include "dbtest.hpp"
 #include "gamestatejson.hpp"
 #include "testutils.hpp"
@@ -98,19 +97,20 @@ protected:
   AddSigner (const std::string& name, const std::string& application,
              const std::string& address)
   {
-    auto* stmt = GetDb ().Prepare (R"(
+    auto stmt = GetDb ().Prepare (R"(
       INSERT INTO `signers`
         (`name`, `application`, `address`)
         VALUES (?1, ?2, ?3)
     )");
-    BindParameter (stmt, 1, name);
-    if (application == "global")
-      BindParameterNull (stmt, 2);
-    else
-      BindParameter (stmt, 2, application);
-    BindParameter (stmt, 3, address);
 
-    CHECK_EQ (sqlite3_step (stmt), SQLITE_DONE);
+    stmt.Bind (1, name);
+    if (application == "global")
+      stmt.BindNull (2);
+    else
+      stmt.Bind (2, application);
+    stmt.Bind (3, address);
+
+    stmt.Execute ();
   }
 
 };
@@ -321,16 +321,17 @@ protected:
   AddAddress (const std::string& name, const std::string& key,
               const std::string& address)
   {
-    auto* stmt = GetDb ().Prepare (R"(
+    auto stmt = GetDb ().Prepare (R"(
       INSERT INTO `addresses`
         (`name`, `key`, `address`)
         VALUES (?1, ?2, ?3)
     )");
-    BindParameter (stmt, 1, name);
-    BindParameter (stmt, 2, key);
-    BindParameter (stmt, 3, address);
 
-    CHECK_EQ (sqlite3_step (stmt), SQLITE_DONE);
+    stmt.Bind (1, name);
+    stmt.Bind (2, key);
+    stmt.Bind (3, address);
+
+    stmt.Execute ();
   }
 
 };

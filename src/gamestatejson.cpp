@@ -4,8 +4,6 @@
 
 #include "gamestatejson.hpp"
 
-#include "database.hpp"
-
 #include <glog/logging.h>
 
 #include <map>
@@ -38,30 +36,25 @@ SignerArrayToJson (const SignerArray& arr)
 Json::Value
 GetNameSigners (const xaya::SQLiteDatabase& db, const std::string& name)
 {
-  auto* stmt = db.PrepareRo (R"(
+  auto stmt = db.PrepareRo (R"(
     SELECT `application`, `address`
       FROM `signers`
       WHERE `name` = ?1
   )");
-  BindParameter (stmt, 1, name);
+  stmt.Bind (1, name);
 
   SignerArray globalSigners;
   std::map<std::string, SignerArray> signers;
-  while (true)
+  while (stmt.Step ())
     {
-      const int rc = sqlite3_step (stmt);
-      if (rc == SQLITE_DONE)
-        break;
-      CHECK_EQ (rc, SQLITE_ROW);
-
       SignerArray* arrayRef = nullptr;
-      if (IsColumnNull (stmt, 0))
+      if (stmt.IsNull (0))
         arrayRef = &globalSigners;
       else
-        arrayRef = &signers[GetColumnValue<std::string> (stmt, 0)];
+        arrayRef = &signers[stmt.Get<std::string> (0)];
       CHECK (arrayRef != nullptr);
 
-      arrayRef->emplace (GetColumnValue<std::string> (stmt, 1));
+      arrayRef->emplace (stmt.Get<std::string> (1));
     }
 
   Json::Value res(Json::arrayValue);
@@ -88,23 +81,18 @@ GetNameSigners (const xaya::SQLiteDatabase& db, const std::string& name)
 Json::Value
 GetNameAddresses (const xaya::SQLiteDatabase& db, const std::string& name)
 {
-  auto* stmt = db.PrepareRo (R"(
+  auto stmt = db.PrepareRo (R"(
     SELECT `key`, `address`
       FROM `addresses`
       WHERE `name` = ?1
   )");
-  BindParameter (stmt, 1, name);
+  stmt.Bind (1, name);
 
   Json::Value res(Json::objectValue);
-  while (true)
+  while (stmt.Step ())
     {
-      const int rc = sqlite3_step (stmt);
-      if (rc == SQLITE_DONE)
-        break;
-      CHECK_EQ (rc, SQLITE_ROW);
-
-      const auto key = GetColumnValue<std::string> (stmt, 0);
-      const auto addr = GetColumnValue<std::string> (stmt, 1);
+      const auto key = stmt.Get<std::string> (0);
+      const auto addr = stmt.Get<std::string> (1);
 
       CHECK (!res.isMember (key));
       res[key] = addr;
@@ -129,20 +117,15 @@ GetNameState (const xaya::SQLiteDatabase& db, const std::string& name)
 Json::Value
 GetFullState (const xaya::SQLiteDatabase& db)
 {
-  auto* stmt = db.PrepareRo (R"(
+  auto stmt = db.PrepareRo (R"(
     SELECT DISTINCT `name` FROM `signers`
     UNION SELECT DISTINCT `name` FROM `addresses`
   )");
 
   Json::Value names(Json::objectValue);
-  while (true)
+  while (stmt.Step ())
     {
-      const int rc = sqlite3_step (stmt);
-      if (rc == SQLITE_DONE)
-        break;
-      CHECK_EQ (rc, SQLITE_ROW);
-
-      const auto name = GetColumnValue<std::string> (stmt, 0);
+      const auto name = stmt.Get<std::string> (0);
       CHECK (!names.isMember (name));
       names[name] = GetNameState (db, name);
     }

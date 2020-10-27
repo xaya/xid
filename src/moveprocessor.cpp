@@ -4,8 +4,6 @@
 
 #include "moveprocessor.hpp"
 
-#include "database.hpp"
-
 #include <glog/logging.h>
 
 namespace xid
@@ -32,7 +30,7 @@ SetSignerList (xaya::SQLiteDatabase& db, const std::string& name,
 
   CHECK (signerArr.isArray ());
 
-  sqlite3_stmt* stmt = nullptr;
+  xaya::SQLiteDatabase::Statement stmt;
   if (application == nullptr)
     stmt = db.Prepare (R"(
       DELETE FROM `signers`
@@ -44,21 +42,21 @@ SetSignerList (xaya::SQLiteDatabase& db, const std::string& name,
         DELETE FROM `signers`
           WHERE `name` = ?1 AND `application` = ?2
       )");
-      BindParameter (stmt, 2, *application);
+      stmt.Bind (2, *application);
     }
-  BindParameter (stmt, 1, name);
-  CHECK_EQ (sqlite3_step (stmt), SQLITE_DONE);
+  stmt.Bind (1, name);
+  stmt.Execute ();
 
   stmt = db.Prepare (R"(
     INSERT INTO `signers`
       (`name`, `application`, `address`)
       VALUES (?1, ?2, ?3)
   )");
-  BindParameter (stmt, 1, name);
+  stmt.Bind (1, name);
   if (application == nullptr)
-    BindParameterNull (stmt, 2);
+    stmt.BindNull (2);
   else
-    BindParameter (stmt, 2, *application);
+    stmt.Bind (2, *application);
 
   for (const auto& addr : signerArr)
     {
@@ -70,14 +68,14 @@ SetSignerList (xaya::SQLiteDatabase& db, const std::string& name,
           continue;
         }
 
-      BindParameter (stmt, 3, addr.asString ());
-      CHECK_EQ (sqlite3_step (stmt), SQLITE_DONE);
+      stmt.Bind (3, addr.asString ());
+      stmt.Execute ();
 
       /* We reuse the prepared statement for all signer inserts, since they
          are just the same operation repeated.  We can even keep the bindings
          for name and application, and just override address in the next
          iteration of the loop.  */
-      sqlite3_reset (stmt);
+      stmt.Reset ();
     }
 }
 
@@ -121,18 +119,18 @@ MoveProcessor::HandleAddressUpdate (const std::string& name,
   if (!obj.isObject ())
     return;
 
-  auto* stmtDel = db.Prepare (R"(
+  auto stmtDel = db.Prepare (R"(
     DELETE FROM `addresses`
       WHERE `name` = ?1 AND `key` = ?2
   )");
-  BindParameter (stmtDel, 1, name);
+  stmtDel.Bind (1, name);
 
-  auto* stmtIns = db.Prepare (R"(
+  auto stmtIns = db.Prepare (R"(
     INSERT OR REPLACE INTO `addresses`
       (`name`, `key`, `address`)
       VALUES (?1, ?2, ?3)
   )");
-  BindParameter (stmtIns, 1, name);
+  stmtIns.Bind (1, name);
 
   for (auto it = obj.begin (); it != obj.end (); ++it)
     {
@@ -142,9 +140,9 @@ MoveProcessor::HandleAddressUpdate (const std::string& name,
       const auto val = *it;
       if (val.isNull ())
         {
-          sqlite3_reset (stmtDel);
-          BindParameter (stmtDel, 2, key);
-          CHECK_EQ (sqlite3_step (stmtDel), SQLITE_DONE);
+          stmtDel.Reset ();
+          stmtDel.Bind (2, key);
+          stmtDel.Execute ();
           VLOG (1)
               << "Deleted address association for " << name << " and " << key;
           continue;
@@ -152,10 +150,10 @@ MoveProcessor::HandleAddressUpdate (const std::string& name,
       if (val.isString ())
         {
           const auto addr = val.asString ();
-          sqlite3_reset (stmtIns);
-          BindParameter (stmtIns, 2, key);
-          BindParameter (stmtIns, 3, addr);
-          CHECK_EQ (sqlite3_step (stmtIns), SQLITE_DONE);
+          stmtIns.Reset ();
+          stmtIns.Bind (2, key);
+          stmtIns.Bind (3, addr);
+          stmtIns.Execute ();
           VLOG (1)
               << "New address for " << name << " and " << key
               << ": " << addr;

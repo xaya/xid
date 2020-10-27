@@ -14,36 +14,14 @@
 namespace xid
 {
 
-namespace
-{
-
-/**
- * Callback for sqlite3_exec that expects not to be called.
- */
-int
-ExpectNoResult (void* data, int columns, char** strs, char** names)
-{
-  LOG (FATAL) << "Expected no result from DB query";
-}
-
-} // anonymous namespace
-
 DBTest::DBTest ()
   : db("test", SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MEMORY)
 {}
 
-void
-DBTest::Execute (const std::string& sql)
-{
-  CHECK_EQ (sqlite3_exec (*db, sql.c_str (), &ExpectNoResult,
-                          nullptr, nullptr),
-            SQLITE_OK);
-}
-
 DBTestWithSchema::DBTestWithSchema ()
 {
   LOG (INFO) << "Setting up game-state schema in test database...";
-  SetupDatabaseSchema (GetHandle ());
+  SetupDatabaseSchema (GetDb ());
 }
 
 } // namespace xid

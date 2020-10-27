@@ -21,14 +21,12 @@ libxid_la_LIBADD = \
   $(XAYAGAME_LIBS) \
   $(JSON_LIBS) $(GLOG_LIBS) $(SQLITE3_LIBS)
 libxid_la_SOURCES = \
-  database.cpp \
   gamestatejson.cpp \
   moveprocessor.cpp \
   nonstaterpc.cpp \
   rpcerrors.cpp \
   schema.cpp
 libxidheaders = \
-  database.hpp \
   gamestatejson.hpp \
   moveprocessor.hpp \
   nonstaterpc.hpp \

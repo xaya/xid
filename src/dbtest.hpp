@@ -31,15 +31,6 @@ protected:
   DBTest ();
 
   /**
-   * Returns the underlying database handle for SQLite.
-   */
-  sqlite3*
-  GetHandle ()
-  {
-    return *db;
-  }
-
-  /**
    * Returns a Database instance for the test.
    */
   xaya::SQLiteDatabase&
@@ -47,12 +38,6 @@ protected:
   {
     return db;
   }
-
-  /**
-   * Executes the given SQL statement directly.  This can be used to modify
-   * the database for setting up the test (e.g. inserting data).
-   */
-  void Execute (const std::string& sql);
 
 };
 

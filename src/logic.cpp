@@ -18,7 +18,7 @@ namespace xid
 void
 XidGame::SetupSchema (xaya::SQLiteDatabase& db)
 {
-  SetupDatabaseSchema (*db);
+  SetupDatabaseSchema (db);
 }
 
 void

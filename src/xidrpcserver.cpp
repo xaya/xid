@@ -4,7 +4,6 @@
 
 #include "xidrpcserver.hpp"
 
-#include "database.hpp"
 #include "gamestatejson.hpp"
 #include "rpcerrors.hpp"
 
@@ -91,29 +90,26 @@ bool
 IsValidSigner (const xaya::SQLiteDatabase& db, const std::string& addr,
                const std::string& name, const std::string& app)
 {
-  auto* stmt = db.PrepareRo (R"(
+  auto stmt = db.PrepareRo (R"(
     SELECT `application`
       FROM `signers`
       WHERE `name` = ?1 AND `address` = ?2
   )");
-  BindParameter (stmt, 1, name);
-  BindParameter (stmt, 2, addr);
+  stmt.Bind (1, name);
+  stmt.Bind (2, addr);
 
-  while (true)
+  while (stmt.Step ())
     {
-      const int rc = sqlite3_step (stmt);
-      if (rc == SQLITE_DONE)
-        return false;
-      CHECK_EQ (rc, SQLITE_ROW);
-
       /* If the application is NULL, we've found a global signer.  */
-      if (IsColumnNull (stmt, 0))
+      if (stmt.IsNull (0))
         return true;
 
       /* Otherwise, check if it matches the requested application.  */
-      if (GetColumnValue<std::string> (stmt, 0) == app)
+      if (stmt.Get<std::string> (0) == app)
         return true;
     }
+
+  return false;
 }
 
 } // anonymous namespace
@@ -200,22 +196,17 @@ FindSignerAddress (const xaya::SQLiteDatabase& db,
                    const std::string& name, const std::string& application,
                    std::string& addr)
 {
-  auto* stmt = db.PrepareRo (R"(
+  auto stmt = db.PrepareRo (R"(
     SELECT `address`
       FROM `signers`
       WHERE `name` = ?1 AND (`application` IS NULL OR `application` = ?2)
   )");
-  BindParameter (stmt, 1, name);
-  BindParameter (stmt, 2, application);
+  stmt.Bind (1, name);
+  stmt.Bind (2, application);
 
-  while (true)
+  while (stmt.Step ())
     {
-      const int rc = sqlite3_step (stmt);
-      if (rc == SQLITE_DONE)
-        return false;
-      CHECK_EQ (rc, SQLITE_ROW);
-
-      const std::string cur = GetColumnValue<std::string> (stmt, 0);
+      const auto cur = stmt.Get<std::string> (0);
       try
         {
           const Json::Value info = xayaWallet.getaddressinfo (cur);
@@ -237,6 +228,8 @@ FindSignerAddress (const xaya::SQLiteDatabase& db,
           LOG (FATAL) << "getaddressinfo " << cur << " failed: " << exc.what ();
         }
     }
+
+  return false;
 }
 
 } // anonymous namespace
