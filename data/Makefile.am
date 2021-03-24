@@ -1,1 +1,1 @@
-EXTRA_DIST = letsencrypt.pem
+dist_pkgdata_DATA = letsencrypt.pem
