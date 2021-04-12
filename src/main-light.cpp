@@ -1,4 +1,4 @@
-// Copyright (C) 2020 The Xaya developers
+// Copyright (C) 2020-2021 The Xaya developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -114,10 +114,18 @@ private:
 
 public:
 
-  explicit LightServer (MainLoop& l, jsonrpc::AbstractServerConnector& conn)
-    : LightServerStub(conn), loop(l), client(FLAGS_rest_endpoint)
+  explicit LightServer (const std::string& endpoint,
+                        MainLoop& l, jsonrpc::AbstractServerConnector& conn)
+    : LightServerStub(conn), loop(l), client(endpoint)
+  {}
+
+  /**
+   * Sets the trusted root CA file for the TLS connection.
+   */
+  void
+  SetCaFile (const std::string& path)
   {
-    client.SetCaFile (FLAGS_cafile);
+    client.SetCaFile (path);
   }
 
   void stop () override;
@@ -211,7 +219,9 @@ main (int argc, char** argv)
   jsonrpc::HttpServer http(FLAGS_game_rpc_port);
   if (FLAGS_game_rpc_listen_locally)
     http.BindLocalhost ();
-  xid::LightServer srv(loop, http);
+  xid::LightServer srv(FLAGS_rest_endpoint, loop, http);
+
+  srv.SetCaFile (FLAGS_cafile);
 
   LOG (INFO) << "Using REST API at " << FLAGS_rest_endpoint;
   LOG (INFO) << "Starting local RPC server on port " << FLAGS_game_rpc_port;
