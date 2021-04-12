@@ -22,12 +22,14 @@ libxid_la_LIBADD = \
   $(JSON_LIBS) $(GLOG_LIBS) $(SQLITE3_LIBS)
 libxid_la_SOURCES = \
   gamestatejson.cpp \
+  light.cpp \
   moveprocessor.cpp \
   nonstaterpc.cpp \
   rpcerrors.cpp \
   schema.cpp
 libxidheaders = \
   gamestatejson.hpp \
+  light.hpp \
   moveprocessor.hpp \
   nonstaterpc.hpp \
   rpcerrors.hpp \
@@ -42,7 +44,7 @@ xid_LDADD = \
   $(top_builddir)/auth/libxidauth.la \
   $(XAYAUTIL_LIBS) $(XAYAGAME_LIBS) \
   $(JSON_LIBS) $(PROTOBUF_LIBS) $(GLOG_LIBS) $(GFLAGS_LIBS)
-xid_SOURCES = main.cpp \
+xid_SOURCES = main-xid.cpp \
   logic.cpp \
   rest.cpp \
   xidrpcserver.cpp
@@ -64,7 +66,7 @@ xid_light_LDADD = \
   $(XAYAGAME_LIBS) \
   $(JSON_LIBS) \
   $(PROTOBUF_LIBS) $(GLOG_LIBS) $(GFLAGS_LIBS)
-xid_light_SOURCES = light.cpp
+xid_light_SOURCES = main-light.cpp
 lightheaders = rpc-stubs/lightserverstub.h
 
 noinst_HEADERS = $(libxidheaders) $(xidheaders) $(lightheaders)

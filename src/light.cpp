@@ -1,8 +1,8 @@
-// Copyright (C) 2020 The Xaya developers
+// Copyright (C) 2020-2021 The Xaya developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "config.h"
+#include "light.hpp"
 
 #include "rpc-stubs/lightserverstub.h"
 
@@ -10,10 +10,7 @@
 
 #include <xayagame/rest.hpp>
 
-#include <gflags/gflags.h>
 #include <glog/logging.h>
-
-#include <google/protobuf/stubs/common.h>
 
 #include <json/json.h>
 #include <jsonrpccpp/common/errors.h>
@@ -22,23 +19,11 @@
 #include <jsonrpccpp/server/connectors/httpserver.h>
 
 #include <condition_variable>
-#include <cstdlib>
-#include <iostream>
 #include <mutex>
-#include <sstream>
-
-DEFINE_int32 (game_rpc_port, 0,
-              "the port at which xid's JSON-RPC server will be started");
-DEFINE_bool (game_rpc_listen_locally, true,
-             "whether the game daemon's JSON-RPC server should listen locally");
-
-DEFINE_string (rest_endpoint, "",
-               "the endpoint of the REST API that is used to query state");
-DEFINE_string (cafile, "",
-               "if set, use this file as CA bundle instead of cURL's default");
 
 namespace xid
 {
+
 namespace
 {
 
@@ -114,10 +99,18 @@ private:
 
 public:
 
-  explicit LightServer (MainLoop& l, jsonrpc::AbstractServerConnector& conn)
-    : LightServerStub(conn), loop(l), client(FLAGS_rest_endpoint)
+  explicit LightServer (const std::string& endpoint,
+                        MainLoop& l, jsonrpc::AbstractServerConnector& conn)
+    : LightServerStub(conn), loop(l), client(endpoint)
+  {}
+
+  /**
+   * Sets the trusted root CA file for the TLS connection.
+   */
+  void
+  SetCaFile (const std::string& path)
   {
-    client.SetCaFile (FLAGS_cafile);
+    client.SetCaFile (path);
   }
 
   void stop () override;
@@ -183,50 +176,55 @@ LightServer::getnamestate (const std::string& name)
 }
 
 } // anonymous namespace
-} // namespace xid
 
-int
-main (int argc, char** argv)
+class LightInstance::Impl
 {
-  google::InitGoogleLogging (argv[0]);
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
 
-  gflags::SetUsageMessage ("Run Xaya ID light interface");
-  gflags::SetVersionString (PACKAGE_VERSION);
-  gflags::ParseCommandLineFlags (&argc, &argv, true);
+private:
 
-  if (FLAGS_game_rpc_port == 0)
-    {
-      std::cerr << "Error: --game_rpc_port must be specified" << std::endl;
-      return EXIT_FAILURE;
-    }
-  if (FLAGS_rest_endpoint.empty ())
-    {
-      std::cerr << "Error: --rest_endpoint must be specified" << std::endl;
-      return EXIT_FAILURE;
-    }
+  /** The main loop being run.  */
+  MainLoop loop;
 
-  xid::MainLoop loop;
+  /** The local HTTP server for RPC requests.  */
+  jsonrpc::HttpServer http;
 
-  jsonrpc::HttpServer http(FLAGS_game_rpc_port);
-  if (FLAGS_game_rpc_listen_locally)
-    http.BindLocalhost ();
-  xid::LightServer srv(loop, http);
+  /** The actual xid-light RPC server.  */
+  LightServer srv;
 
-  LOG (INFO) << "Using REST API at " << FLAGS_rest_endpoint;
-  LOG (INFO) << "Starting local RPC server on port " << FLAGS_game_rpc_port;
-  srv.StartListening ();
+  friend class LightInstance;
 
-  /* Note that the main loop implementation here does not catch and handle
-     signals.  Thus if the process is interrupted and not shut down via RPC,
-     it will simply terminate without executing the rest of main.  This is
-     not an issue, though, as there is nothing to worry about in this case
-     anyway.  */
-  loop.Wait ();
+public:
 
-  LOG (INFO) << "Stopping the local RPC server...";
-  srv.StopListening ();
+  explicit Impl (const std::string& endpoint, const int rpcPort)
+    : http(rpcPort), srv(endpoint, loop, http)
+  {}
 
-  google::protobuf::ShutdownProtobufLibrary ();
-  return EXIT_SUCCESS;
+};
+
+LightInstance::LightInstance (const std::string& endpoint, const int rpcPort)
+  : impl(new Impl (endpoint, rpcPort))
+{}
+
+LightInstance::~LightInstance () = default;
+
+void
+LightInstance::EnableListenLocally ()
+{
+  impl->http.BindLocalhost ();
 }
+
+void
+LightInstance::SetCaFile (const std::string& path)
+{
+  impl->srv.SetCaFile (path);
+}
+
+void
+LightInstance::Run ()
+{
+  impl->srv.StartListening ();
+  impl->loop.Wait ();
+  impl->srv.StopListening ();
+}
+
+} // namespace xid
