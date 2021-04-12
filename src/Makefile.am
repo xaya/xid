@@ -22,12 +22,14 @@ libxid_la_LIBADD = \
   $(JSON_LIBS) $(GLOG_LIBS) $(SQLITE3_LIBS)
 libxid_la_SOURCES = \
   gamestatejson.cpp \
+  light.cpp \
   moveprocessor.cpp \
   nonstaterpc.cpp \
   rpcerrors.cpp \
   schema.cpp
 libxidheaders = \
   gamestatejson.hpp \
+  light.hpp \
   moveprocessor.hpp \
   nonstaterpc.hpp \
   rpcerrors.hpp \
