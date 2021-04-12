@@ -26,7 +26,8 @@ libxid_la_SOURCES = \
   moveprocessor.cpp \
   nonstaterpc.cpp \
   rpcerrors.cpp \
-  schema.cpp
+  schema.cpp \
+  test.cpp
 libxidheaders = \
   gamestatejson.hpp \
   light.hpp \
