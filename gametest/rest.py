@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # coding=utf8
 
-# Copyright (C) 2019-2020 The Xaya developers
+# Copyright (C) 2019-2021 The Xaya developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -41,7 +41,7 @@ class GetNameStateTest (XidTest):
 
     self.mainLogger.info ("Enabling the REST interface...")
     self.stopGameDaemon ()
-    self.restPort = self.basePort + 10
+    self.restPort = next (self.ports)
     self.log.info ("Using port %d for the REST API" % self.restPort)
     self.startGameDaemon (extraArgs=["--rest_port=%d" % self.restPort])
 

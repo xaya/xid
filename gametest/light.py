@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # coding=utf8
 
-# Copyright (C) 2020 The Xaya developers
+# Copyright (C) 2020-2021 The Xaya developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -147,10 +147,10 @@ class LightModeTest (XidTest):
     self.sendMove ("domob", {"s": {"g": [addr]}})
     self.generate (1)
 
-    self.lightPort = self.basePort + 10
-    restPort = self.basePort + 11
-    invalidPort = self.basePort + 12
-    dummyPort = self.basePort + 13
+    self.lightPort = next (self.ports)
+    restPort = next (self.ports)
+    invalidPort = next (self.ports)
+    dummyPort = next (self.ports)
     restEndpoint = "http://localhost:%d" % restPort
 
     self.mainLogger.info ("Enabling the REST interface...")
