@@ -35,7 +35,7 @@ class GetNameStateTest (XidTest):
 
   def run (self):
     self.generate (101)
-    addr = self.rpc.xaya.getnewaddress ("", "legacy")
+    addr = self.env.createSignerAddress ()
     self.sendMove ("domob", {"s": {"g": [addr]}})
     self.generate (1)
 

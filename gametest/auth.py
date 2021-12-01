@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # coding=utf8
 
-# Copyright (C) 2019-2020 The Xaya developers
+# Copyright (C) 2019-2021 The Xaya developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -28,7 +28,7 @@ class AuthTest (XidTest):
     }
     authMsg = self.rpc.game.getauthmessage (name=name, application=app, data=d)
 
-    signed = self.rpc.xaya.signmessage (addr, authMsg["authmessage"])
+    signed = self.env.signMessage (addr, authMsg["authmessage"])
     pwd = self.rpc.game.setauthsignature (password=authMsg["password"],
                                           signature=signed)
 
@@ -37,9 +37,9 @@ class AuthTest (XidTest):
   def run (self):
     self.generate (101)
 
-    self.addrGeneral = self.rpc.xaya.getnewaddress ("", "legacy")
-    self.addrApp = self.rpc.xaya.getnewaddress ("", "legacy")
-    self.addrEmpty = self.rpc.xaya.getnewaddress ("", "legacy")
+    self.addrGeneral = self.env.createSignerAddress ()
+    self.addrApp = self.env.createSignerAddress ()
+    self.addrEmpty = self.env.createSignerAddress ()
     self.sendMove ("domob", {"s": {
       "g": ["invalid just for fun", self.addrGeneral],
       "a":

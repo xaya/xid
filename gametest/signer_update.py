@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (C) 2019-2020 The Xaya developers
+# Copyright (C) 2019-2021 The Xaya developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -48,7 +48,7 @@ class SignerUpdateTest (XidTest):
 
     addr = []
     for _ in range (4):
-      addr.append (self.rpc.xaya.getnewaddress ("", "legacy"))
+      addr.append (self.env.createSignerAddress ())
 
     # The game state returns addresses in ascending order in arrays (that's
     # not guaranteed by the specification but how it works currently).  Thus

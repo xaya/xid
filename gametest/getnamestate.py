@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (C) 2019-2020 The Xaya developers
+# Copyright (C) 2019-2021 The Xaya developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -16,7 +16,7 @@ class GetNameStateTest (XidTest):
   def run (self):
     self.generate (101)
 
-    addr = self.rpc.xaya.getnewaddress ("", "legacy")
+    addr = self.env.createSignerAddress ()
     self.sendMove ("domob", {"s": {"g": [addr]}})
     self.generate (1)
 

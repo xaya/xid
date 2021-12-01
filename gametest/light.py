@@ -143,7 +143,7 @@ class LightModeTest (XidTest):
 
   def run (self):
     self.generate (101)
-    addr = self.rpc.xaya.getnewaddress ("", "legacy")
+    addr = self.env.createSignerAddress ()
     self.sendMove ("domob", {"s": {"g": [addr]}})
     self.generate (1)
 
@@ -166,7 +166,7 @@ class LightModeTest (XidTest):
                           self.rpc.game.getnamestate (name=name))
 
       authmsg = l.rpc.getauthmessage (name="domob", application="app", data={})
-      sgn = self.rpc.xaya.signmessage (addr, authmsg["authmessage"])
+      sgn = self.env.signMessage (addr, authmsg["authmessage"])
       pwd = l.rpc.setauthsignature (password=authmsg["password"], signature=sgn)
       self.assertEqual (self.getRpc ("verifyauth", name="domob",
                                      application="app", password=pwd), {
