@@ -201,9 +201,11 @@ class LightModeTest (XidTest):
     with self.startLight ("https://xid.xaya.io") as l:
       self.assertEqual (l.rpc.getnullstate ()["chain"], "main")
 
-    self.mainLogger.info ("Testing TLS error with the endpoint...")
-    with self.startLight ("https://seeder.xaya.io") as l:
-      self.expectError (-32603, ".*cURL error.*SSL.*", l.rpc.getnullstate)
+    # FIXME: Perhaps figure out a way to reliably test this with the
+    # production setup.
+    #self.mainLogger.info ("Testing TLS error with the endpoint...")
+    #with self.startLight ("https://seeder.xaya.io") as l:
+    #  self.expectError (-32603, ".*cURL error.*SSL.*", l.rpc.getnullstate)
 
 
 if __name__ == "__main__":
