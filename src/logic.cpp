@@ -45,6 +45,13 @@ XidGame::GetInitialStateBlock (unsigned& height, std::string& hashHex) const
           = "6f750b36d22f1dc3d0a6e483af45301022646dfc3b3ba2187865f5a7d6d83ab1";
       break;
 
+    case xaya::Chain::GANACHE:
+      height = 0;
+      /* Ganache does not have a fixed genesis block.  So leave the block
+         hash open and just accept any at height 0.  */
+      hashHex = "";
+      break;
+
     default:
       LOG (FATAL) << "Invalid chain value: " << static_cast<int> (chain);
     }

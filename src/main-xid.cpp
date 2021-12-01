@@ -152,6 +152,12 @@ main (int argc, char** argv)
   config.EnablePruning = FLAGS_enable_pruning;
   config.DataDirectory = FLAGS_datadir;
 
+  /* X Eth reports its version as 1.0.0.0 initially, so accept that to make
+     sure the process can run both on Xaya X and normal core.  The default
+     minimum version on core of 1.2 is very old already anyway, so we can
+     assume it will be met.  */
+  config.MinXayaVersion = 1'00'00'00;
+
   jsonrpc::HttpClient httpXaya(config.XayaRpcUrl);
   std::unique_ptr<XayaWalletRpcClient> xayaWallet;
   if (FLAGS_allow_wallet)
