@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # coding=utf8
 
-# Copyright (C) 2019-2021 The Xaya developers
+# Copyright (C) 2019-2022 The Xaya developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -51,6 +51,19 @@ class GetNameStateTest (XidTest):
     self.expectError (404, "/")
     self.expectError (404, "/foo")
     self.expectError (404, "/state/")
+
+    self.mainLogger.info ("Testing /state...")
+    resp = urllib.request.urlopen ("http://localhost:%d/state" % self.restPort)
+    self.assertEqual (resp.getcode (), 200)
+    res = json.loads (resp.read ())
+    self.assertEqual (res, self.rpc.game.getnullstate ())
+
+    self.mainLogger.info ("Testing /healthz...")
+    resp = urllib.request.urlopen ("http://localhost:%d/healthz"
+                                      % self.restPort)
+    self.assertEqual (resp.getcode (), 200)
+    # It is not easy to force the GSP to be unhealthy in the test,
+    # so we just cover the healthy case.
 
     self.mainLogger.info ("Testing name retrieval...")
     for name in ["domob", "foo/bar", "", "abc def", u"kräfti"]:
