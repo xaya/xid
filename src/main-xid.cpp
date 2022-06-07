@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 The Xaya developers
+// Copyright (C) 2020-2022 The Xaya developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -52,6 +52,8 @@ DEFINE_string (datadir, "",
                "base data directory for state data"
                " (will be extended by 'id' the chain)");
 
+DEFINE_bool (unsafe_rpc, true,
+             "whether or not to allow 'unsafe' RPC methods like stop");
 DEFINE_bool (allow_wallet, false,
              "whether to allow RPC methods that access the Xaya Core wallet");
 
@@ -97,6 +99,8 @@ public:
     using WrappedRpc = xaya::WrappedRpcServer<xid::XidRpcServer>;
     auto rpc = std::make_unique<WrappedRpc> (game, rules, conn);
 
+    if (FLAGS_unsafe_rpc)
+      rpc->Get ().EnableUnsafeMethods ();
     if (xayaWallet != nullptr)
       rpc->Get ().EnableWallet (*xayaWallet);
 

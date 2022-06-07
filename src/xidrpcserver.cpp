@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 The Xaya developers
+// Copyright (C) 2019-2022 The Xaya developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -18,6 +18,17 @@ namespace xid
 {
 
 void
+XidRpcServer::EnsureUnsafeAllowed (const std::string& method) const
+{
+  if (!unsafeMethods)
+    {
+      LOG (WARNING) << "Blocked unsafe '" << method << "' call";
+      ThrowJsonError (ErrorCode::UNSAFE_METHOD,
+                      "unsafe RPC methods are disabled in the server");
+    }
+}
+
+void
 XidRpcServer::EnsureWalletAvailable () const
 {
   if (xayaWallet == nullptr)
@@ -26,9 +37,17 @@ XidRpcServer::EnsureWalletAvailable () const
 }
 
 void
+XidRpcServer::EnableUnsafeMethods ()
+{
+  LOG (WARNING) << "Enabling unsafe RPC methods";
+  unsafeMethods = true;
+}
+
+void
 XidRpcServer::stop ()
 {
   LOG (INFO) << "RPC method called: stop";
+  EnsureUnsafeAllowed ("stop");
   game.RequestStop ();
 }
 
@@ -36,6 +55,7 @@ Json::Value
 XidRpcServer::getcurrentstate ()
 {
   LOG (INFO) << "RPC method called: getcurrentstate";
+  EnsureUnsafeAllowed ("getcurrentstate");
   return game.GetCurrentJsonState ();
 }
 

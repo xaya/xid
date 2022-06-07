@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 The Xaya developers
+// Copyright (C) 2019-2022 The Xaya developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -40,11 +40,23 @@ private:
   XidGame& logic;
 
   /**
+   * Whether or not to allow "unsafe" RPC methods (like stop, that should
+   * not be publicly exposed).
+   */
+  bool unsafeMethods = false;
+
+  /**
    * The RPC connection to Xaya Core that supports wallet-based functions.
    * This is only set if the wallet is explicitly enabled when running xid
    * (to prevent accidental access) and will be null otherwise.
    */
   XayaWalletRpcClient* xayaWallet = nullptr;
+
+  /**
+   * Checks if unsafe methods are allowed.  If not, throws a JSON-RPC
+   * exception to the caller.
+   */
+  void EnsureUnsafeAllowed (const std::string& method) const;
 
   /**
    * Checks if the Xaya wallet is available and throws a corresponding
@@ -58,6 +70,12 @@ public:
                          jsonrpc::AbstractServerConnector& conn)
     : XidRpcServerStub(conn), game(g), logic(l)
   {}
+
+  /**
+   * Turns on support for unsafe methods, which should not be publicly
+   * exposed.
+   */
+  void EnableUnsafeMethods ();
 
   /**
    * Enables support for RPC methods that require the Xaya wallet.

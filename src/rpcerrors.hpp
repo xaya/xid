@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 The Xaya developers
+// Copyright (C) 2019-2022 The Xaya developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -26,6 +26,8 @@ enum class ErrorCode
   WALLET_NOT_ENABLED = -2,
   /* The Xaya wallet is locked.  */
   WALLET_LOCKED = -3,
+  /* This method is considered unsafe and not enabled in the server.  */
+  UNSAFE_METHOD = -4,
 
   /* The provided data (name, applcation, extra) is invalid while constructing
      an auth message (not validating a password).  */
