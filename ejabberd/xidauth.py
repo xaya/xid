@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (C) 2019-2020 The Xaya developers
+# Copyright (C) 2019-2022 The Xaya developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -20,10 +20,81 @@ SIMPLE_NAME_CHARS = string.digits + string.ascii_lowercase
 HEX_CHARS = string.digits + "abcdef"
 
 
-class EjabberdXidAuth (object):
+class EjabberdServer:
+  """
+  The authentication service for a single XMPP server, which is
+  tied to a particular Xid application string and also
+  JSON-RPC endpoint (e.g. Xid on a particular network).
+  """
+
+  def __init__ (self, application, xidRpcUrl):
+    self.application = application
+    self.xidRpc = jsonrpclib.ServerProxy (xidRpcUrl)
+    self.chain = self.xidRpc.getnullstate ()["chain"]
+
+    # The log is filled in when the service gets added to an instance
+    # of EjabberdXidAuth.
+    self.log = None
+
+  def unwrapGameState (self, data):
+    """
+    Verifies that the game-state JSON in data represents an up-to-date
+    state (if not, an exception is raised).  Then unwraps the contained
+    actual state from the "data" field and returns that.
+    """
+
+    if data["state"] != "up-to-date":
+      self.log.critical ("xid is not up-to-date: %s" % data["state"])
+      raise RuntimeError ("xid is not up-to-date")
+
+    return data["data"]
+
+  def isUser (self, xayaName):
+    """
+    Checks if the given username (already decoded to Xaya) is
+    a registered user of Xid on this service.
+    """
+
+    data = self.xidRpc.getnamestate (name=xayaName)
+    state = self.unwrapGameState (data)
+
+    for entry in state["signers"]:
+      if len (entry["addresses"]) == 0:
+        continue
+
+      if not "application" in entry:
+        self.log.debug ("Found global signer key for %s" % xayaName)
+        return True
+
+      if entry["application"] == self.application:
+        self.log.debug ("Found signer key for %s and application %s"
+                          % (xayaName, app))
+        return True
+
+    self.log.debug ("No valid signer keys for %s and application %s"
+                      % (xayaName, self.application))
+    return False
+
+  def authenticate (self, xayaName, pwd):
+    """
+    Checks if the given user (as decoded Xaya name) can be authenticated
+    with the given password on this Xid service.
+    """
+
+    data = self.xidRpc.verifyauth (name=xayaName, application=self.application,
+                                   password=pwd)
+    state = self.unwrapGameState (data)
+
+    self.log.debug ("Authentication state from xid: %s" % state["state"])
+    return state["valid"]
+
+
+class EjabberdXidAuth:
   """
   The main class for an external authentication script for ejabberd that
-  uses xid to authenticate users on the XMPP server.
+  uses xid to authenticate users on the XMPP server.  It has a mapping of
+  potentially multiple XMPP server names / domains to the associated
+  Xid authentication services, e.g. for different networks.
 
   Note that XMPP has certain restrictions on the usernames; in particular,
   names are treated in a case-insensitive way (other than Xaya).  Thus,
@@ -32,12 +103,13 @@ class EjabberdXidAuth (object):
   UTF-8.
   """
 
-  def __init__ (self, serverNames, xidRpcUrl, logHandler):
-    self.serverNames = serverNames
-    self.xidRpc = jsonrpclib.ServerProxy (xidRpcUrl)
-
+  def __init__ (self, services, logHandler):
     if logHandler is not None:
       self.setupLogging (logHandler)
+
+    self.serverNames = services
+    for s in self.serverNames.values ():
+      s.log = self.log
 
   def setupLogging (self, handler):
     logFmt = "%(asctime)s %(name)s (%(levelname)s): %(message)s"
@@ -123,19 +195,6 @@ class EjabberdXidAuth (object):
     self.log.warning ("Simple name was hex-encoded: %s" % name)
     return None
 
-  def unwrapGameState (self, data):
-    """
-    Verifies that the game-state JSON in data represents an up-to-date
-    state (if not, an exception is raised).  Then unwraps the contained
-    actual state from the "data" field and returns that.
-    """
-
-    if data["state"] != "up-to-date":
-      self.log.critical ("xid is not up-to-date: %s" % data["state"])
-      raise RuntimeError ("xid is not up-to-date")
-
-    return data["data"]
-
   def isUser (self, name, server):
     """
     Checks whether the given XMPP name is a valid user for the given
@@ -146,31 +205,12 @@ class EjabberdXidAuth (object):
     if server not in self.serverNames:
       self.log.warning ("Server %s is not configured for xidauth" % server)
       return False
-    app = self.serverNames[server]
 
     xayaName = self.decodeXmppName (name)
     if xayaName is None:
       return False
 
-    data = self.xidRpc.getnamestate (name=xayaName)
-    state = self.unwrapGameState (data)
-
-    for entry in state["signers"]:
-      if len (entry["addresses"]) == 0:
-        continue
-
-      if not "application" in entry:
-        self.log.debug ("Found global signer key for %s" % xayaName)
-        return True
-
-      if entry["application"] == app:
-        self.log.debug ("Found signer key for %s and application %s"
-                          % (xayaName, app))
-        return True
-
-    self.log.debug ("No valid signer keys for %s and application %s"
-                      % (xayaName, app))
-    return False
+    return self.serverNames[server].isUser (xayaName)
 
   def authenticate (self, name, server, pwd):
     """
@@ -181,17 +221,12 @@ class EjabberdXidAuth (object):
     if server not in self.serverNames:
       self.log.warning ("Server %s is not configured for xidauth" % server)
       return False
-    app = self.serverNames[server]
 
     xayaName = self.decodeXmppName (name)
     if xayaName is None:
       return False
 
-    data = self.xidRpc.verifyauth (name=xayaName, application=app, password=pwd)
-    state = self.unwrapGameState (data)
-
-    self.log.debug ("Authentication state from xid: %s" % state["state"])
-    return state["valid"]
+    return self.serverNames[server].authenticate (xayaName, pwd)
 
   def run (self, inp, outp):
     """
@@ -201,12 +236,9 @@ class EjabberdXidAuth (object):
     """
 
     servers = ""
-    for s, a in self.serverNames.items ():
-      servers += "\n  %s: %s" % (s, a)
+    for n, s in self.serverNames.items ():
+      servers += "\n  %s: %s (%s)" % (n, s.application, s.chain)
     self.log.info ("Running xid authentication script for servers:" + servers)
-
-    data = self.xidRpc.getnamestate (name="xaya")
-    self.log.info ("Xid is %s at height %d" % (data["state"], data["height"]))
 
     self.log.info ("Starting main loop...")
     while True:
@@ -230,16 +262,19 @@ class EjabberdXidAuth (object):
 if __name__ == "__main__":
   desc = "ejabberd extauth script for authentication with xid"
   parser = argparse.ArgumentParser (description=desc)
-  parser.add_argument ("--xid_rpc_url", required=True,
-                       help="JSON-RPC URL for xid's RPC interface")
-  parser.add_argument ("--servername", required=True,
-                       help="name of the XMPP server")
-  parser.add_argument ("--application", required=True,
-                       help="application name for xid")
+  parser.add_argument ("--servers", required=True, nargs="+",
+                       help="Server names to handle as server,application,rpcurl triplets")
   parser.add_argument ("--logfile", default="/var/log/ejabberd/xidauth.log",
                        help="filename for writing logs to")
   args = parser.parse_args ()
 
-  auth = EjabberdXidAuth ({args.servername: args.application}, args.xid_rpc_url,
-                          logging.FileHandler (args.logfile))
+  services = {}
+  for s in args.servers:
+    parts = s.split (",")
+    if len (parts) != 3:
+      sys.exit ("Invalid server triplet: %s" % s)
+    [srv, app, rpcUrl] = parts
+    services[srv] = EjabberdServer (app, rpcUrl)
+
+  auth = EjabberdXidAuth (services, logging.FileHandler (args.logfile))
   auth.run (sys.stdin.buffer, sys.stdout.buffer)

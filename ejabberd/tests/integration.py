@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # coding=utf8
 
-# Copyright (C) 2019-2020 The Xaya developers
+# Copyright (C) 2019-2022 The Xaya developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -123,7 +123,7 @@ class XidAuthTest (XidTest):
     # We need an instance of EjabberdXidAuth for decoding names.  Create it
     # and then only use it for that purpose.  (This is not the instance
     # that will be used in the real test.)
-    self.auth = EjabberdXidAuth ({}, "http://localhost", None)
+    self.auth = EjabberdXidAuth ({}, None)
     self.auth.log = logging.getLogger ("xidauth")
 
     # Define some test names (of various types) and set up signer addresses
@@ -173,9 +173,8 @@ class XidAuthTest (XidTest):
       srcdir = "."
     binary = os.path.join (srcdir, "xidauth.py")
     cmd = [binary]
-    cmd.append ("--xid_rpc_url=http://localhost:%s" % self.gamenode.port)
-    cmd.append ("--servername=%s" % self.server)
-    cmd.append ("--application=%s" % self.app)
+    rpcUrl = "http://localhost:%s" % self.gamenode.port
+    cmd.extend (["--servers", "%s,%s,%s" % (self.server, self.app, rpcUrl)])
     cmd.append ("--logfile=%s" % os.path.join (self.basedir, "xidauth.log"))
     try:
       self.log.info ("Starting process: %s" % " ".join (cmd))

@@ -1,6 +1,6 @@
 #!/bin/sh -e
 
-# Copyright (C) 2020 The Xaya developers
+# Copyright (C) 2020-2022 The Xaya developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -8,7 +8,5 @@
 # variables from the Docker context to set the arguments.
 
 exec ${HOME}/bin/xidauth.py \
-  --xid_rpc_url "${XID_RPC_URL}" \
-  --application "${XID_APPLICATION}" \
-  --servername "${XMPP_DOMAIN}" \
+  --servers ${XIDAUTH_SERVERS} \
   --logfile "${HOME}/logs/xidauth.log"

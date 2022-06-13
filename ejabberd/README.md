@@ -58,11 +58,3 @@ Then, the following configuration options should be set in `ejabberd.yml`:
 
     auth_method: external
     extauth_program: "/etc/ejabberd/xidauth.py ...arguments..."
-
-**Note:  When Xid is running its JSON-RPC server over HTTP, it
-[allows connections to the specified port
-*from everywhere*](https://github.com/xaya/libxayagame/issues/41).
-In particular, this
-allows anyone to e.g. shut down the server.  Thus, for Xid running on a
-public server, it is important to block the RPC port from incoming
-external connections through a suitable firewall (e.g. `iptables`)!**
