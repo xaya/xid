@@ -29,7 +29,7 @@ enum class ErrorCode
   /* This method is considered unsafe and not enabled in the server.  */
   UNSAFE_METHOD = -4,
 
-  /* The provided data (name, applcation, extra) is invalid while constructing
+  /* The provided data (name, application, extra) is invalid while constructing
      an auth message (not validating a password).  */
   AUTH_INVALID_DATA = 1,
   /* An invalid password string was provided, which could not be decoded to
@@ -38,6 +38,8 @@ enum class ErrorCode
   AUTH_INVALID_PASSWORD = 2,
   /* The Xaya wallet does not hold any key allowed to sign the credentials.  */
   AUTH_NO_KEY = 3,
+  /* The signature provided with setauthsignature is invalid base64.  */
+  AUTH_INVALID_SIGNATURE = 4,
 
 };
 

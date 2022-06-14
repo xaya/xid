@@ -1,4 +1,4 @@
-// Copyright (C) 2019 The Xaya developers
+// Copyright (C) 2019-2022 The Xaya developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -83,10 +83,20 @@ public:
    */
   bool IsExpired () const;
 
-  /* Accessor functions for the data in the protocol buffer.  */
-
+  /**
+   * Returns the signature contained in the protocol buffer, encoded
+   * as base64 (per Xaya Core for verifymessage).
+   */
   std::string GetSignature () const;
+
+  /**
+   * Sets the signature field in the protocol buffer.  The sgn argument
+   * must be base64 encoded, and will be set as raw bytes inside
+   * the proto.
+   */
   void SetSignature (const std::string& sgn);
+
+  /* Accessor functions for the data in the protocol buffer.  */
 
   bool
   HasExpiry () const

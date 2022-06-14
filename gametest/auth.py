@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # coding=utf8
 
-# Copyright (C) 2019-2021 The Xaya developers
+# Copyright (C) 2019-2022 The Xaya developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -150,6 +150,9 @@ class AuthTest (XidTest):
     self.expectError (2, "failed to parse the password string",
                       self.rpc.game.setauthsignature,
                       password="invalid base64", signature="")
+    self.expectError (4, "the signature is not base64",
+                      self.rpc.game.setauthsignature,
+                      password="", signature="invalid base64")
 
   def testVerification (self):
     self.mainLogger.info ("Testing credentials verification...")

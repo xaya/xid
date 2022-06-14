@@ -198,8 +198,10 @@ in a second step.
 This method can be used to add in the signature for an already-constructed
 password (e.g. coming from [`getauthmessage`](#getauthmessage)).
 
-It expects two string arguments, `password` and `signature`.  It returns
-the amended password as string.
+It expects two string arguments, `password` and `signature`.
+The signature should be the raw signature bytes encoded with base64,
+as they get returned by Xaya Core's signing RPC methods.
+`setauthsignature` returns the amended password as string.
 
 #### `verifyauth`
 

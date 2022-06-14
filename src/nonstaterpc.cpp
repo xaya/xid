@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 The Xaya developers
+// Copyright (C) 2019-2022 The Xaya developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -7,6 +7,8 @@
 #include "rpcerrors.hpp"
 
 #include "auth/time.hpp"
+
+#include <xayautil/base64.hpp>
 
 #include <glog/logging.h>
 
@@ -88,6 +90,11 @@ NonStateRpc::setauthsignature (const std::string& password,
   if (!cred.ValidateFormat ())
     ThrowJsonError (ErrorCode::AUTH_INVALID_DATA,
                     "the authentication data is invalid");
+
+  std::string rawSignature;
+  if (!xaya::DecodeBase64 (signature, rawSignature))
+    ThrowJsonError (ErrorCode::AUTH_INVALID_SIGNATURE,
+                    "the signature is not base64");
 
   cred.SetSignature (signature);
 
