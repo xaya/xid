@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (C) 2019-2020 The Xaya developers
+# Copyright (C) 2019-2024 The Xaya developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -94,6 +94,7 @@ class AuthWithWalletTest (XidTest):
     addr = self.rpc.xaya.getnewaddress ("", "legacy")
     self.sendMove ("domob", {"s": {"a": {"app": [addr]}}})
     self.generate (1)
+    self.syncGame ()
     self.signAndCheck ("domob", "app")
 
     self.mainLogger.info ("Testing error for no valid key...")
@@ -109,6 +110,7 @@ class AuthWithWalletTest (XidTest):
     self.mainLogger.info ("Signing with global key...")
     self.sendMove ("domob", {"s": {"g": [addr]}})
     self.generate (1)
+    self.syncGame ()
     self.signAndCheck ("domob", "other")
 
 
