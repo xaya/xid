@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (C) 2019-2022 The Xaya developers
+# Copyright (C) 2019-2025 The Xaya developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -103,20 +103,20 @@ class EjabberdXidAuth:
   UTF-8.
   """
 
-  def __init__ (self, services, logHandler):
+  def __init__ (self, services, logHandler, logLevel=logging.INFO):
     if logHandler is not None:
-      self.setupLogging (logHandler)
+      self.setupLogging (logHandler, logLevel)
 
     self.serverNames = services
     for s in self.serverNames.values ():
       s.log = self.log
 
-  def setupLogging (self, handler):
+  def setupLogging (self, handler, logLevel):
     logFmt = "%(asctime)s %(name)s (%(levelname)s): %(message)s"
     handler.setFormatter (logging.Formatter (logFmt))
 
     self.log = logging.getLogger ("xidauth")
-    self.log.setLevel (logging.INFO)
+    self.log.setLevel (logLevel)
     self.log.addHandler (handler)
 
   def readCommand (self, inp):
@@ -266,6 +266,8 @@ if __name__ == "__main__":
                        help="Server names to handle as server,application,rpcurl triplets")
   parser.add_argument ("--logfile", default="/var/log/ejabberd/xidauth.log",
                        help="filename for writing logs to")
+  parser.add_argument ("--debug", action="store_true",
+                       help="If enabled, turn on debug logging")
   args = parser.parse_args ()
 
   services = {}
@@ -276,5 +278,9 @@ if __name__ == "__main__":
     [srv, app, rpcUrl] = parts
     services[srv] = EjabberdServer (app, rpcUrl)
 
-  auth = EjabberdXidAuth (services, logging.FileHandler (args.logfile))
+  logLevel = logging.INFO
+  if args.debug:
+    logLevel = logging.DEBUG
+
+  auth = EjabberdXidAuth (services, logging.FileHandler (args.logfile), logLevel=logLevel)
   auth.run (sys.stdin.buffer, sys.stdout.buffer)

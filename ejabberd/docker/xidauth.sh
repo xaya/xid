@@ -1,6 +1,6 @@
 #!/bin/sh -e
 
-# Copyright (C) 2020-2022 The Xaya developers
+# Copyright (C) 2020-2025 The Xaya developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -9,4 +9,5 @@
 
 exec ${HOME}/bin/xidauth.py \
   --servers ${XIDAUTH_SERVERS} \
-  --logfile "${HOME}/logs/xidauth.log"
+  --logfile "${HOME}/logs/xidauth.log" \
+  $@

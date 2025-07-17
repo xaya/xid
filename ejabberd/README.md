@@ -27,17 +27,24 @@ is a self-contained Python script that implements
 authentication](https://www.ejabberd.im/files/doc/dev.html#htoc9)
 in a single source file.
 
-It requires the following command-line arguments to be set:
+It can be configured to support one or multiple servers.  For each
+server, the following data bits need to be configured:
 
-- `--xid_rpc_url=URL`:  Must be set to the URL at which
+- The application name that should be used for
+  [authentication with Xid](../doc/auth.md).  For simple usecases, this can
+  just be chosen the same as the server name.
+- The external name of the XMPP server
+  for which authentication should be performed.  For instance, `chat.xaya.io`.
+- The URL at which
   [`xid`'s JSON-RPC server](../doc/rpc.md) is listening.
   For instance, `http://localhost:PORT` for `xid` running locally
   on the given port.
-- `--servername=SERVER`:  This specifies the external name of the XMPP server
-  for which authentication should be performed.  For instance, `chat.xaya.io`.
-- `--application=APP`:  The application name that should be used for
-  [authentication with Xid](../doc/auth.md).  For simple usecases, this can
-  just be chosen the same as `--servername`.
+
+One or more servers must be configured with the `--servers` command-line
+argument in the following form:
+
+    --servers application,servername,rpcurl
+    --servers app1,server1,rpc1 app2,server2,rpc2,...
 
 In addition, the following arguments can be passed optionally:
 
@@ -45,6 +52,7 @@ In addition, the following arguments can be passed optionally:
   starting the script.
 - `--logfile=FILE`:  Sets the filename where logs should be written.
   By default, `/var/log/ejabberd/xidauth.log` is used.
+- `--debug`:  Create more verbose debug logs instead of info level.
 
 When started successfully, `xidauth.py` will simply run in an endless loop,
 reading commands from `stdin` and writing output to `stdout` (as per the
