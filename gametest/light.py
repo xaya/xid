@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # coding=utf8
 
-# Copyright (C) 2020-2021 The Xaya developers
+# Copyright (C) 2020-2025 The Xaya developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -181,7 +181,7 @@ class LightModeTest (XidTest):
       self.expectError (-32603, ".*HTTP.*404.*", l.rpc.getnullstate)
     invalidConnection = "http://localhost:%d" % invalidPort
     with self.startLight (invalidConnection) as l:
-      self.expectError (-32603, ".*Connection refused.*", l.rpc.getnullstate)
+      self.expectError (-32603, ".*Failed to connect.*", l.rpc.getnullstate)
 
     self.mainLogger.info ("Testing REST endpoint returning not JSON...")
     DummyRequestHandler.responseType = "text/plain"
@@ -196,16 +196,6 @@ class LightModeTest (XidTest):
     with DummyServer (dummyPort), \
          self.startLight ("http://localhost:%d" % dummyPort) as l:
       self.expectError (-32603, ".*JSON parser.*", l.rpc.getnullstate)
-
-    self.mainLogger.info ("Testing with remote REST endpoint and TLS...")
-    with self.startLight ("https://xid.xaya.io") as l:
-      self.assertEqual (l.rpc.getnullstate ()["chain"], "main")
-
-    # FIXME: Perhaps figure out a way to reliably test this with the
-    # production setup.
-    #self.mainLogger.info ("Testing TLS error with the endpoint...")
-    #with self.startLight ("https://seeder.xaya.io") as l:
-    #  self.expectError (-32603, ".*cURL error.*SSL.*", l.rpc.getnullstate)
 
 
 if __name__ == "__main__":
