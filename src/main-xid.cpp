@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2022 The Xaya developers
+// Copyright (C) 2020-2025 The Xaya developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -71,9 +71,6 @@ private:
   /** The REST API port.  */
   int restPort = 0;
 
-  /** If set to non-null, enable the Xaya wallet on the RPC server.  */
-  XayaWalletRpcClient* xayaWallet = nullptr;
-
 public:
 
   explicit XidInstanceFactory (xid::XidGame& r)
@@ -86,12 +83,6 @@ public:
     restPort = p;
   }
 
-  void
-  EnableWallet (XayaWalletRpcClient& xw)
-  {
-    xayaWallet = &xw;
-  }
-
   std::unique_ptr<xaya::RpcServerInterface>
   BuildRpcServer (xaya::Game& game,
                   jsonrpc::AbstractServerConnector& conn) override
@@ -101,8 +92,6 @@ public:
 
     if (FLAGS_unsafe_rpc)
       rpc->Get ().EnableUnsafeMethods ();
-    if (xayaWallet != nullptr)
-      rpc->Get ().EnableWallet (*xayaWallet);
 
     return rpc;
   }
@@ -162,19 +151,10 @@ main (int argc, char** argv)
      assume it will be met.  */
   config.MinXayaVersion = 1'00'00'00;
 
-  jsonrpc::HttpClient httpXaya(config.XayaRpcUrl);
-  std::unique_ptr<XayaWalletRpcClient> xayaWallet;
-  if (FLAGS_allow_wallet)
-    xayaWallet
-        = std::make_unique<XayaWalletRpcClient> (httpXaya,
-                                                 jsonrpc::JSONRPC_CLIENT_V1);
-
   xid::XidGame rules;
   XidInstanceFactory instanceFact(rules);
   if (FLAGS_rest_port != 0)
     instanceFact.EnableRest (FLAGS_rest_port);
-  if (xayaWallet != nullptr)
-    instanceFact.EnableWallet (*xayaWallet);
   config.InstanceFactory = &instanceFact;
 
   const int rc = xaya::SQLiteMain (config, "id", rules);

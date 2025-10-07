@@ -247,16 +247,3 @@ values:
 - **`expired`** means that the credentials are valid but expired at the
   current system time.
 - **`valid`** is returned if and only if `valid` is set to `true`.
-
-#### `authwithwallet`
-
-This method constructs *and signs* authentication credentials using
-the wallet of the attached Xaya Core daemon.  To use it, XID has to
-be started with `--allow_wallet`.
-
-The `name`, `application` and `data` have to be passed as arguments.
-They are defined as for [`getauthmessage`](#getauthmessage).
-
-Returned is a JSON object similar to [`getnullstate`](#getnullstate).
-In its `data` field, the constructed and fully signed password string
-is returned.

@@ -8,11 +8,8 @@ on behalf of the XAYA name.
 
 The authentication protocol described here is implemented directly in Xid,
 which exposes [RPC methods](rpc.md) for verifying credentials and
-constructing them for keys the user owns.  This makes it very easy to
-support Xid authentication in third-party projects.  But if necessary,
-external applications can of course also implement the authentication
-protocol on their own (e.g. if private keys are managed outside of
-a Xaya Core wallet).
+helpers for constructing them for user signatures.  This makes it very easy to
+support Xid authentication in third-party projects.
 
 ## Overview
 

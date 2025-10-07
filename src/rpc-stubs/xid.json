@@ -56,15 +56,5 @@
         "password": "base64"
       },
     "returns": {}
-  },
-  {
-    "name": "authwithwallet",
-    "params":
-      {
-        "name": "foobar",
-        "application": "app",
-        "data": {}
-      },
-    "returns": {}
   }
 ]
