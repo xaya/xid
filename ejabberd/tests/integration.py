@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # coding=utf8
 
-# Copyright (C) 2019-2022 The Xaya developers
+# Copyright (C) 2019-2025 The Xaya developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -30,14 +30,7 @@ class XidAuthTest (XidTest):
     """
 
     xayaName = self.decodeName (name)
-    authMsg = self.rpc.game.getauthmessage (name=xayaName, application=self.app,
-                                            data={})
-
-    signed = self.rpc.xaya.signmessage (self.addr, authMsg["authmessage"])
-    pwd = self.rpc.game.setauthsignature (password=authMsg["password"],
-                                          signature=signed)
-
-    return pwd
+    return super ().createPassword (xayaName, self.app, self.addr, None, {})
 
   def hexEncodeName (self, name):
     """
@@ -135,7 +128,7 @@ class XidAuthTest (XidTest):
       self.hexEncodeName ("Foo Bar"),
       self.hexEncodeName (u"äöü"),
     ]
-    self.addr = self.rpc.xaya.getnewaddress ("", "legacy")
+    self.addr = self.env.createSignerAddress ()
     self.log.info ("Using signer address: %s" % self.addr)
     for n in self.testNames:
       xayaName = self.decodeName (n)

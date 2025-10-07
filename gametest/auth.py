@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # coding=utf8
 
-# Copyright (C) 2019-2022 The Xaya developers
+# Copyright (C) 2019-2025 The Xaya developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -15,24 +15,6 @@ Tests the authentication RPC methods.
 
 
 class AuthTest (XidTest):
-
-  def createPassword (self, name, app, addr, expiry, extra):
-    """
-    Creates a Xid password for the given data, signed with the given
-    Xaya address.
-    """
-
-    d = {
-      "expiry": expiry,
-      "extra": extra,
-    }
-    authMsg = self.rpc.game.getauthmessage (name=name, application=app, data=d)
-
-    signed = self.env.signMessage (addr, authMsg["authmessage"])
-    pwd = self.rpc.game.setauthsignature (password=authMsg["password"],
-                                          signature=signed)
-
-    return pwd
 
   def run (self):
     self.generate (101)

@@ -7,9 +7,7 @@ TEST_LIBRARY = \
 
 REGTESTS = \
   address_update.py \
-  allow_wallet.py \
   auth.py \
-  authwithwallet.py \
   getnamestate.py \
   light.py \
   rest.py \
