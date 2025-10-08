@@ -30,7 +30,7 @@ class XidAuthTest (XidTest):
     """
 
     xayaName = self.decodeName (name)
-    return super ().createPassword (xayaName, self.app, self.addr, None, {})
+    return super ().createPassword (xayaName, self.app, self.addr)
 
   def hexEncodeName (self, name):
     """

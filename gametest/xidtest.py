@@ -31,16 +31,13 @@ class XidTest (XayaXGameTest):
 
     return self.getCustomState ("data", method, **kwargs)
 
-  def createPassword (self, name, app, addr, expiry, extra):
+  def createPassword (self, name, app, addr, **options):
     """
     Creates a Xid password for the given data, signed with the given
     Xaya address.
     """
 
-    d = {
-      "expiry": expiry,
-      "extra": extra,
-    }
+    d = options
     authMsg = self.rpc.game.getauthmessage (name=name, application=app, data=d)
 
     signed = self.env.signMessage (addr, authMsg["authmessage"])

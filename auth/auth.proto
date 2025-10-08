@@ -1,10 +1,25 @@
-// Copyright (C) 2019 The Xaya developers
+// Copyright (C) 2019-2025 The Xaya developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 syntax = "proto2";
 
 package xid;
+
+/**
+ * Types of signing / validation protocols.
+ */
+enum Protocol
+{
+  /** Via the xid GSP and gamestate.  */
+  XID_GSP = 0;
+
+  /**
+   * Via an EVM Xaya delegation contract.  Addresses with delegation access
+   * to ["g", "id", "xidauth"] are allowed to sign.
+   */
+  DELEGATION_CONTRACT = 1;
+}
 
 /**
  * The data for authenticating a user with Xid, not including the username
@@ -31,5 +46,9 @@ message AuthData
    * that only contain alphanumeric characters and ".".
    */
   map<string, string> extra = 3;
+
+  /** Protocol used for the signing.  If not set, then XID_GSP is assumed.  */
+  optional Protocol protocol = 4;
+
 
 }

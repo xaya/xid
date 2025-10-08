@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022 The Xaya developers
+// Copyright (C) 2019-2025 The Xaya developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -111,6 +111,20 @@ public:
 
   void AddExtra (const std::string& key, const std::string& value);
   ExtraMap GetExtra () const;
+
+  Protocol
+  GetProtocol () const
+  {
+    if (data.has_protocol ())
+      return data.protocol ();
+    return Protocol::XID_GSP;
+  }
+
+  void
+  SetProtocol (const Protocol p)
+  {
+    data.set_protocol (p);
+  }
 
 };
 
