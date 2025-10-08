@@ -50,7 +50,8 @@ AC_CONFIG_FILES([
   data/Makefile \
   ejabberd/Makefile \
   gametest/Makefile \
-  src/Makefile
+  src/Makefile \
+  xidauth/Makefile
 ])
 AC_OUTPUT
 
