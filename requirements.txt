@@ -1,3 +1,5 @@
+eth_account
 jsonrpclib-pelix
 protobuf
+web3==7
 xayax
