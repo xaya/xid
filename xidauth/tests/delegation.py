@@ -4,12 +4,17 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-from xidauth.credentials import Credentials, Protocol
-from xidauth.delegation import Encoder
+from xidauth.credentials import Credentials, InvalidCredentialsError, Protocol
+from xidauth.delegation import Encoder, Verifier
+
+from xidtest import XidTest
 
 import binascii
+import sys
+import time
 import unittest
 
+################################################################################
 
 class EncoderTest (unittest.TestCase):
 
@@ -98,6 +103,205 @@ class EncoderTest (unittest.TestCase):
 
     self.assertEqual (msg1.body, msg2.body)
 
+################################################################################
+
+class VerifierTest (XidTest):
+
+  def register (self, name, owner=None):
+    sender = self.env.contracts.account
+    self.env.register ("p", name, addr=sender)
+    self.generate (1)
+
+    if owner is not None:
+      tokenId = self.env.contracts.registry.functions \
+          .tokenIdForName ("p", name).call ()
+      self.env.contracts.registry.functions \
+          .transferFrom (sender, owner, tokenId) \
+          .transact ({"from": sender})
+      self.generate (1)
+
+  @staticmethod
+  def createCredentials (name, app):
+    cred = Credentials (name, app)
+    cred.protocol = Protocol.DELEGATION_CONTRACT
+    return cred
+
+  def signWith (self, cred, signer):
+    """
+    Signs the given credentials (adds a raw_signature) with the
+    given signer address.
+    """
+
+    msg = self.verifier.encodeCredentials (cred)
+    acc = self.env.lookupSignerAccount (signer)
+    signature = acc.sign_message (msg)
+    cred.raw_signature = signature.signature
+
+  def expectInvalid (self, cred):
+    """
+    Expects that the given credentials are invalid when verified.
+    """
+
+    try:
+      self.verifier.verifyCredentials (cred)
+      raise RuntimeError ("expected credentials to be invalid")
+    except InvalidCredentialsError:
+      pass
+
+  def run (self):
+    self.generate (1)
+
+    abi = Verifier.loadAbi ("XayaDelegation")
+    self.contracts.delegation = self.env.evm.deployContract (
+        self.env.contracts.account, abi,
+        self.contracts.registry.address, "0x" + "00" * 20)
+
+    self.verifier = Verifier (self.env.evm.w3,
+                              self.contracts.delegation.address)
+
+    snapshot = self.env.snapshot ()
+
+    self.testIsRegistered ()
+    snapshot.restore ()
+
+    self.testInvalidProtocol ()
+    snapshot.restore ()
+
+    self.testExpiry ()
+    snapshot.restore ()
+
+    self.testSignatureCommitment ()
+    snapshot.restore ()
+
+    self.testAddressPermissions ()
+    snapshot.restore ()
+
+  def testIsRegistered (self):
+    self.register ("domob")
+    self.register ("XY Z")
+    self.assertEqual (self.verifier.isRegistered ("domob"), True)
+    self.assertEqual (self.verifier.isRegistered ("andy"), False)
+    self.assertEqual (self.verifier.isRegistered ("XY Z"), True)
+
+  def testInvalidProtocol (self):
+    addr = self.env.createSignerAddress ()
+    self.register ("domob", addr)
+
+    cred = self.createCredentials ("domob", "app")
+    cred.protocol = Protocol.XID_GSP
+    self.signWith (cred, addr)
+    self.expectInvalid (cred)
+
+  def testExpiry (self):
+    addr = self.env.createSignerAddress ()
+    self.register ("domob", addr)
+
+    cred = self.createCredentials ("domob", "app")
+    cred.expiry = 123
+    self.signWith (cred, addr)
+    self.expectInvalid (cred)
+
+    cred.expiry = int (time.time ()) + 1_000
+    self.signWith (cred, addr)
+    self.verifier.verifyCredentials (cred)
+
+    del cred.expiry
+    self.signWith (cred, addr)
+    self.verifier.verifyCredentials (cred)
+
+  def testSignatureCommitment (self):
+    addr = self.env.createSignerAddress ()
+    self.register ("domob", addr)
+
+    cred = self.createCredentials ("domob", "app")
+    self.signWith (cred, addr)
+    cred.name = "andy"
+    self.expectInvalid (cred)
+
+    # Even if the name exists the signature is invalid.
+    self.register ("andy", addr)
+    self.expectInvalid (cred)
+
+    cred = self.createCredentials ("domob", "app")
+    self.signWith (cred, addr)
+    cred.app = "other app"
+    self.expectInvalid (cred)
+
+    cred = self.createCredentials ("domob", "app")
+    self.signWith (cred, addr)
+    cred.expiry = 12_345_678_900
+    self.expectInvalid (cred)
+
+    cred = self.createCredentials ("domob", "app")
+    self.signWith (cred, addr)
+    cred.extra["foo"] = "bar"
+    self.expectInvalid (cred)
+
+    # Re-sign to make it valid.
+    self.signWith (cred, addr)
+    self.verifier.verifyCredentials (cred)
+
+  def testAddressPermissions (self):
+    owner = self.env.createSignerAddress ()
+    self.register ("domob", owner)
+
+    # Make sure the owner address has some balance for gas.
+    self.env.evm.w3.eth.send_transaction ({
+      "from": self.env.contracts.account,
+      "to": owner,
+      "value": 10**18,
+    })
+    self.generate (1)
+
+    tokenId = self.contracts.registry.functions \
+        .tokenIdForName ("p", "domob").call ()
+    noExpiry = 2**256 - 1
+
+    approvedForAll = self.env.createSignerAddress ()
+    approvedOne = self.env.createSignerAddress ()
+    allPermission = self.env.createSignerAddress ()
+    appPermission = self.env.createSignerAddress ()
+    otherAppPermission = self.env.createSignerAddress ()
+    calls = [
+      self.contracts.registry.functions \
+          .setApprovalForAll (approvedForAll, True),
+      self.contracts.registry.functions.approve (approvedOne, tokenId),
+      self.contracts.delegation.functions \
+          .grant ("p", "domob", [], allPermission, noExpiry, False),
+      self.contracts.delegation.functions \
+          .grant ("p", "domob", ["g", "id", "xidauth", "app"],
+                  appPermission, noExpiry, False),
+      self.contracts.delegation.functions \
+          .grant ("p", "domob", ["g", "id", "xidauth", "other app"],
+                  otherAppPermission, noExpiry, False),
+    ]
+    nonce = self.env.evm.w3.eth.get_transaction_count (owner)
+    for c in calls:
+      tx = c.build_transaction ({
+        "from": owner,
+        "gas": 1_000_000,
+        "nonce": nonce,
+      })
+      signed = self.env.lookupSignerAccount (owner).sign_transaction (tx)
+      self.env.evm.w3.eth.send_raw_transaction (signed.raw_transaction)
+      nonce += 1
+    self.generate (1)
+
+    for addr in [owner, approvedForAll, approvedOne,
+                 allPermission, appPermission]:
+      cred = self.createCredentials ("domob", "app")
+      self.signWith (cred, addr)
+      self.verifier.verifyCredentials (cred)
+
+    cred = self.createCredentials ("domob", "app")
+    self.signWith (cred, otherAppPermission)
+    self.expectInvalid (cred)
+    cred.app = "other app"
+    self.signWith (cred, otherAppPermission)
+    self.verifier.verifyCredentials (cred)
+
+################################################################################
 
 if __name__ == "__main__":
-  unittest.main ()
+  unittest.main (argv=sys.argv[:1], exit=False)
+  VerifierTest ().main ()

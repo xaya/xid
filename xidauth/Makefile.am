@@ -1,5 +1,5 @@
 AM_TESTS_ENVIRONMENT = \
-  PYTHONPATH=$(top_srcdir)
+  PYTHONPATH=$(top_srcdir):$(top_srcdir)/gametest
 
 EXTRA_DIST = \
   abi/XayaAccounts.json \

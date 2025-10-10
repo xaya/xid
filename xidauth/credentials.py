@@ -103,3 +103,13 @@ class Credentials:
   @extra.deleter
   def extra (self):
     self.data.extra.clear ()
+
+
+class InvalidCredentialsError (Exception):
+  """
+  Exception class that is thrown on validating credentials if they
+  are not valid.
+  """
+
+  def __init__ (self, msg):
+    super ().__init__ (msg)
