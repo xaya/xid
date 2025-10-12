@@ -1,5 +1,7 @@
+build
 eth_account
 jsonrpclib-pelix
 protobuf
+twine
 web3==7
 xayax
