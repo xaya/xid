@@ -8,7 +8,9 @@ import jsonrpclib
 
 import argparse
 import codecs
+import json
 import logging
+import os
 import string
 import struct
 import sys
@@ -262,21 +264,28 @@ class EjabberdXidAuth:
 if __name__ == "__main__":
   desc = "ejabberd extauth script for authentication with xid"
   parser = argparse.ArgumentParser (description=desc)
-  parser.add_argument ("--servers", required=True, nargs="+",
-                       help="Server names to handle as server,application,rpcurl triplets")
   parser.add_argument ("--logfile", default="/var/log/ejabberd/xidauth.log",
                        help="filename for writing logs to")
   parser.add_argument ("--debug", action="store_true",
                        help="If enabled, turn on debug logging")
   args = parser.parse_args ()
 
+  config = os.getenv ("EJABBERD_XIDAUTH_CONFIG")
+  if config is None:
+    sys.exit ("EJABBERD_XIDAUTH_CONFIG must be set")
+  config = json.loads (config)
+  if not isinstance (config, dict):
+    sys.exit (f"invalid config:\n{config}")
+
   services = {}
-  for s in args.servers:
-    parts = s.split (",")
-    if len (parts) != 3:
-      sys.exit ("Invalid server triplet: %s" % s)
-    [srv, app, rpcUrl] = parts
-    services[srv] = EjabberdServer (app, rpcUrl)
+  for srvName, srvConfig in config.items ():
+    if not isinstance (srvConfig, dict):
+      sys.exit (f"invalid config for server {srvName}:\n{srvConfig}")
+    if not "app" in srvConfig:
+      sys.exit (f"config for server {srvName} has no app defined:\n{srvConfig}")
+    if not "xid-gsp" in srvConfig:
+      sys.exit (f"config for server {srvName} has no GSP defined:\n{srvConfig}")
+    services[srvName] = EjabberdServer (srvConfig["app"], srvConfig["xid-gsp"])
 
   logLevel = logging.INFO
   if args.debug:

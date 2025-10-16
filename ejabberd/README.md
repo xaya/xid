@@ -40,11 +40,22 @@ server, the following data bits need to be configured:
   For instance, `http://localhost:PORT` for `xid` running locally
   on the given port.
 
-One or more servers must be configured with the `--servers` command-line
-argument in the following form:
+The whole configuration must be encoded into a JSON object like this:
 
-    --servers application,servername,rpcurl
-    --servers app1,server1,rpc1 app2,server2,rpc2,...
+    {
+      "server1": {
+        "app": app1,
+        "xid-gsp": rpc1,
+      },
+      "server2": {
+        "app": app2,
+        "xid-gsp": rpc2
+      },
+      ...
+    }
+
+This JSON object must be encoded into a string and stored in the
+environment variable `EJABBERD_XIDAUTH_CONFIG`.
 
 In addition, the following arguments can be passed optionally:
 

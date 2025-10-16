@@ -9,6 +9,7 @@ from ejabberd_xidauth import EjabberdXidAuth
 from xidtest import XidTest
 
 import codecs
+import json
 import logging
 import os
 import os.path
@@ -166,12 +167,20 @@ class XidAuthTest (XidTest):
       srcdir = "."
     binary = os.path.join (srcdir, "ejabberd_xidauth.py")
     cmd = [binary]
-    rpcUrl = "http://localhost:%s" % self.gamenode.port
-    cmd.extend (["--servers", "%s,%s,%s" % (self.server, self.app, rpcUrl)])
     cmd.append ("--logfile=%s" % os.path.join (self.basedir, "xidauth.log"))
+    config = {
+      self.server: {
+        "app": self.app,
+        "xid-gsp": f"http://localhost:{self.gamenode.port}",
+      },
+    }
+    env = {
+      "EJABBERD_XIDAUTH_CONFIG": json.dumps (config),
+    }
     try:
       self.log.info ("Starting process: %s" % " ".join (cmd))
-      self.proc = subprocess.Popen (cmd, stdin=subprocess.PIPE,
+      self.proc = subprocess.Popen (cmd, env=env,
+                                    stdin=subprocess.PIPE,
                                     stdout=subprocess.PIPE)
       time.sleep (1)
       rc = self.proc.poll ()
