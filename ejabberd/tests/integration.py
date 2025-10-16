@@ -168,6 +168,7 @@ class XidAuthTest (XidTest):
     binary = os.path.join (srcdir, "ejabberd_xidauth.py")
     cmd = [binary]
     cmd.append ("--logfile=%s" % os.path.join (self.basedir, "xidauth.log"))
+    cmd.append ("--debug")
     config = {
       self.server: {
         "app": self.app,
