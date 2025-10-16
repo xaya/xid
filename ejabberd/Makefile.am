@@ -5,5 +5,5 @@ TEST_FILES = \
   tests/integration.py \
   tests/namecoding.py
 
-noinst_PYTHON = xidauth.py $(TEST_FILES)
+noinst_PYTHON = ejabberd_xidauth.py $(TEST_FILES)
 TESTS = $(TEST_FILES)

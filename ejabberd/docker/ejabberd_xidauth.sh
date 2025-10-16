@@ -7,7 +7,7 @@
 # This is a simple wrapper script around xidauth.py, using some environment
 # variables from the Docker context to set the arguments.
 
-exec ${HOME}/bin/xidauth.py \
+exec ${HOME}/bin/ejabberd_xidauth.py \
   --servers ${XIDAUTH_SERVERS} \
   --logfile "${HOME}/logs/xidauth.log" \
   $@

@@ -16,12 +16,12 @@ should use Xid identities for [user authentication](../doc/auth.md)
 (so that no separate user account is necessary).
 Luckily, `ejabberd` supports pluggable scripts for
 [external authentication](https://www.ejabberd.im/files/doc/dev.html#htoc9).
-**`xidauth.py` is such a script, which allows running `ejabberd` with
+**`ejabberd_xidauth.py` is such a script, which allows running `ejabberd` with
 user authentication through Xid.**
 
-## Usage of `xidauth.py`
+## Usage of `ejabberd_xidauth.py`
 
-[`xidauth.py`](https://github.com/xaya/xid/blob/master/ejabberd/xidauth.py)
+[`ejabberd_xidauth.py`](https://github.com/xaya/xid/blob/master/ejabberd/ejabberd_xidauth.py)
 is a self-contained Python script that implements
 [`ejabberd` external
 authentication](https://www.ejabberd.im/files/doc/dev.html#htoc9)
@@ -54,15 +54,17 @@ In addition, the following arguments can be passed optionally:
   By default, `/var/log/ejabberd/xidauth.log` is used.
 - `--debug`:  Create more verbose debug logs instead of info level.
 
-When started successfully, `xidauth.py` will simply run in an endless loop,
+When started successfully, `ejabberd_xidauth.py` will simply run in an
+endless loop,
 reading commands from `stdin` and writing output to `stdout` (as per the
 requirements for extauth scripts).
 
 ## Configuration of `ejabberd`
 
-To use `xidauth.py` with `ejabberd`, the script has to be copied to some
+To use `ejabberd_xidauth.py` with `ejabberd`, the script has to be
+copied to some
 accessible place on the server first.  For instance, to `/etc/ejabberd`.
 Then, the following configuration options should be set in `ejabberd.yml`:
 
     auth_method: external
-    extauth_program: "/etc/ejabberd/xidauth.py ...arguments..."
+    extauth_program: "/etc/ejabberd/ejabberd_xidauth.py ...arguments..."

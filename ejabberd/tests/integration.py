@@ -5,7 +5,7 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-from xidauth import EjabberdXidAuth
+from ejabberd_xidauth import EjabberdXidAuth
 from xidtest import XidTest
 
 import codecs
@@ -164,7 +164,7 @@ class XidAuthTest (XidTest):
     srcdir = os.getenv ("srcdir")
     if srcdir is None:
       srcdir = "."
-    binary = os.path.join (srcdir, "xidauth.py")
+    binary = os.path.join (srcdir, "ejabberd_xidauth.py")
     cmd = [binary]
     rpcUrl = "http://localhost:%s" % self.gamenode.port
     cmd.extend (["--servers", "%s,%s,%s" % (self.server, self.app, rpcUrl)])
