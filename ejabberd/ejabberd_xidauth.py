@@ -4,7 +4,11 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+from xidauth.credentials import Credentials, InvalidCredentialsError
+from xidauth.delegation import Verifier
+
 import jsonrpclib
+from web3 import Web3
 
 import argparse
 import codecs
@@ -96,6 +100,38 @@ class XidGspAuthenticator (Authenticator):
 
     self.log.debug (f"Authentication state from xid: {state['state']}")
     return state["valid"]
+
+
+class DelegationContractAuthenticator (Authenticator):
+
+  def __init__ (self, ethRpcUrl, delegationContract):
+    super ().__init__ ()
+
+    w3 = Web3 (Web3.HTTPProvider (ethRpcUrl))
+    self.verifier = Verifier (w3, delegationContract)
+
+  def isUser (self, xayaName, app):
+    res = self.verifier.isRegistered (xayaName)
+    self.log.debug (f"Xaya name {xayaName} is registered: {res}")
+    return res
+
+  def authenticate (self, xayaName, app, pwd):
+    try:
+      cred = Credentials (xayaName, app)
+      cred.password = pwd
+      self.verifier.verifyCredentials (cred)
+      self.log.debug (f"Authenticated {xayaName} for {app} successfully")
+      return True
+    except InvalidCredentialsError as exc:
+      self.log.debug (f"Invalid password for {xayaName} on {app}: {exc}")
+      return False
+    except Exception as exc:
+      # We catch everything here, not just InvalidCredentailsError, so that
+      # we e.g. also catch invalid base64 encoded passwords or anything else
+      # that might turn up and provide an avenue for crashing the server.
+      self.log.warning (
+          f"Error caught while authenticating {xayaName} on {app}: {exc}")
+      return False
 
 
 class EjabberdServer:
@@ -329,6 +365,15 @@ if __name__ == "__main__":
     s = EjabberdServer (srvConfig["app"])
     if "xid-gsp" in srvConfig:
       s.addAuthenticator (XidGspAuthenticator (srvConfig["xid-gsp"]))
+    if "delegation-contract" in srvConfig:
+      delCfg = srvConfig["delegation-contract"]
+      if (not isinstance (delCfg, dict)) \
+          or (not "evm-rpc" in delCfg) \
+          or (not "del-addr" in delCfg):
+        sys.exit (
+            f"invalid delegation-contract config for {srvName}:\n{delCfg}")
+      s.addAuthenticator (DelegationContractAuthenticator (
+          delCfg["evm-rpc"], delCfg["del-addr"]))
 
     if not s.hasAuthenticators ():
       sys.exit (

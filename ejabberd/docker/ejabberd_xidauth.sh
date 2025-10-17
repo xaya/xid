@@ -7,6 +7,7 @@
 # This is a simple wrapper script around ejabbed_xidauth.py, using some
 # environment variables from the Docker context to set the arguments.
 
+. ${HOME}/venv/bin/activate
 exec ${HOME}/bin/ejabberd_xidauth.py \
   --logfile "${HOME}/logs/xidauth.log" \
   $@

@@ -1,5 +1,5 @@
 AM_TESTS_ENVIRONMENT = \
-  PYTHONPATH=$(srcdir):$(top_srcdir)/gametest
+  PYTHONPATH=$(srcdir):$(top_srcdir)/gametest:$(top_srcdir)
 
 TEST_FILES = \
   tests/integration.py \

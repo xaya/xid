@@ -35,10 +35,18 @@ server, the following data bits need to be configured:
   just be chosen the same as the server name.
 - The external name of the XMPP server
   for which authentication should be performed.  For instance, `chat.xaya.io`.
-- The URL at which
-  [`xid`'s JSON-RPC server](../doc/rpc.md) is listening.
-  For instance, `http://localhost:PORT` for `xid` running locally
-  on the given port.
+
+In addition, one or more authentication methods must be defined.  The server
+accepts all users for which any one of them succeeds with their credentials:
+
+- Authentication based on signers defined in the XID GSP state.  For this,
+  the URL at which [`xid`'s JSON-RPC server](../doc/rpc.md) is listening
+  must be configured.
+- Authentication based on the Xaya delegation contract on an EVM chain,
+  where signing allowances are managed with delegation permissions (and
+  the account owner and all approved addresses are automatically signers).
+  For this, the EVM node JSON-RPC URL and the address of the delegation
+  contract to use must be configured.
 
 The whole configuration must be encoded into a JSON object like this:
 
@@ -49,7 +57,10 @@ The whole configuration must be encoded into a JSON object like this:
       },
       "server2": {
         "app": app2,
-        "xid-gsp": rpc2
+        "delegation-contract": {
+          "evm-rpc": rpc2,
+          "del-addr": contract2
+        },
       },
       ...
     }
