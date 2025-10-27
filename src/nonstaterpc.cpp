@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2022 The Xaya developers
+// Copyright (C) 2019-2025 The Xaya developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -42,6 +42,22 @@ NonStateRpc::ApplyAuthDataJson (const Json::Value& data, Credentials& cred)
                             "extra value must be a string");
           cred.AddExtra (i.key ().asString (), i->asString ());
         }
+    }
+
+  const auto& protocolVal = data["protocol"];
+  if (!protocolVal.isNull ())
+    {
+      if (!protocolVal.isString ())
+        ThrowJsonError (ErrorCode::INVALID_ARGUMENT,
+                        "protocol must be a string");
+
+      const auto proto = protocolVal.asString ();
+      if (proto == "xid-gsp")
+        cred.SetProtocol (Protocol::XID_GSP);
+      else if (proto == "delegation-contract")
+        cred.SetProtocol (Protocol::DELEGATION_CONTRACT);
+      else
+        ThrowJsonError (ErrorCode::INVALID_ARGUMENT, "invalid protocol value");
     }
 }
 

@@ -1,0 +1,35 @@
+[project]
+name = "xidauth"
+version = "1.0.0"
+authors = [
+  { name = "Daniel Kraft", email = "d@domob.eu" },
+]
+description = "Xid credentials verification based on delegation-contract"
+requires-python = ">=3.9"
+dependencies =  [
+  "eth_account",
+  "jsonrpclib-pelix",
+  "protobuf",
+  "web3==7",
+]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+  "License :: OSI Approved :: MIT License",
+]
+readme = "README.md"
+license = {file = "COPYING"}
+
+[project.urls]
+Homepage = "https://xaya.io"
+Repository = "https://github.com/xaya/xid"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["xidauth", "xidauth.abi"]
+
+[tool.setuptools.package-data]
+"xidauth.abi" = ["*.json"]

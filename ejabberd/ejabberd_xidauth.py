@@ -4,11 +4,17 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+from xidauth.credentials import Credentials, InvalidCredentialsError
+from xidauth.delegation import Verifier
+
 import jsonrpclib
+from web3 import Web3
 
 import argparse
 import codecs
+import json
 import logging
+import os
 import string
 import struct
 import sys
@@ -20,21 +26,39 @@ SIMPLE_NAME_CHARS = string.digits + string.ascii_lowercase
 HEX_CHARS = string.digits + "abcdef"
 
 
-class EjabberdServer:
+class Authenticator:
   """
-  The authentication service for a single XMPP server, which is
-  tied to a particular Xid application string and also
-  JSON-RPC endpoint (e.g. Xid on a particular network).
+  An object that knows how to actually check for registered
+  users (Xaya names) and authenticate them with a password.
   """
 
-  def __init__ (self, application, xidRpcUrl):
-    self.application = application
-    self.xidRpc = jsonrpclib.ServerProxy (xidRpcUrl)
-    self.chain = self.xidRpc.getnullstate ()["chain"]
-
+  def __init__ (self):
     # The log is filled in when the service gets added to an instance
     # of EjabberdXidAuth.
     self.log = None
+
+  def isUser (self, xayaName, app):
+    """
+    Checks if the given username (already decoded to Xaya) is
+    a registered user for this service.
+    """
+
+    raise RuntimeError ("isUser is not implemented")
+
+  def authenticate (self, xayaName, app, pwd):
+    """
+    Checks if the given user (as decoded Xaya name) can be authenticated
+    with the given password on this Xid service.
+    """
+
+    raise RuntimeError ("authenticate is not implemented")
+
+
+class XidGspAuthenticator (Authenticator):
+
+  def __init__ (self, xidRpcUrl):
+    super ().__init__ ()
+    self.xidRpc = jsonrpclib.ServerProxy (xidRpcUrl)
 
   def unwrapGameState (self, data):
     """
@@ -49,12 +73,7 @@ class EjabberdServer:
 
     return data["data"]
 
-  def isUser (self, xayaName):
-    """
-    Checks if the given username (already decoded to Xaya) is
-    a registered user of Xid on this service.
-    """
-
+  def isUser (self, xayaName, app):
     data = self.xidRpc.getnamestate (name=xayaName)
     state = self.unwrapGameState (data)
 
@@ -66,27 +85,88 @@ class EjabberdServer:
         self.log.debug ("Found global signer key for %s" % xayaName)
         return True
 
-      if entry["application"] == self.application:
-        self.log.debug ("Found signer key for %s and application %s"
-                          % (xayaName, app))
+      if entry["application"] == app:
+        self.log.debug (
+            f"Found signer key for {xayaName} and application {app}")
         return True
 
-    self.log.debug ("No valid signer keys for %s and application %s"
-                      % (xayaName, self.application))
+    self.log.debug (
+        f"No valid signer keys for {xayaName} and application {app}")
+    return False
+
+  def authenticate (self, xayaName, app, pwd):
+    data = self.xidRpc.verifyauth (name=xayaName, application=app, password=pwd)
+    state = self.unwrapGameState (data)
+
+    self.log.debug (f"Authentication state from xid: {state['state']}")
+    return state["valid"]
+
+
+class DelegationContractAuthenticator (Authenticator):
+
+  def __init__ (self, ethRpcUrl, delegationContract):
+    super ().__init__ ()
+
+    w3 = Web3 (Web3.HTTPProvider (ethRpcUrl))
+    self.verifier = Verifier (w3, delegationContract)
+
+  def isUser (self, xayaName, app):
+    res = self.verifier.isRegistered (xayaName)
+    self.log.debug (f"Xaya name {xayaName} is registered: {res}")
+    return res
+
+  def authenticate (self, xayaName, app, pwd):
+    try:
+      cred = Credentials (xayaName, app)
+      cred.password = pwd
+      self.verifier.verifyCredentials (cred)
+      self.log.debug (f"Authenticated {xayaName} for {app} successfully")
+      return True
+    except InvalidCredentialsError as exc:
+      self.log.debug (f"Invalid password for {xayaName} on {app}: {exc}")
+      return False
+    except Exception as exc:
+      # We catch everything here, not just InvalidCredentailsError, so that
+      # we e.g. also catch invalid base64 encoded passwords or anything else
+      # that might turn up and provide an avenue for crashing the server.
+      self.log.warning (
+          f"Error caught while authenticating {xayaName} on {app}: {exc}")
+      return False
+
+
+class EjabberdServer:
+  """
+  The authentication service for a single XMPP server, which is
+  tied to a particular Xid application string.  It has one or more
+  authenticators that do the actual authentication.  A user is supposed
+  to be valid / authorised if any of them succeeds.
+  """
+
+  def __init__ (self, application):
+    self.application = application
+    self.authenticators = []
+
+  def addAuthenticator (self, auth):
+    self.authenticators.append (auth)
+
+  def hasAuthenticators (self):
+    return len (self.authenticators) > 0
+
+  def setLog (self, log):
+    for auth in self.authenticators:
+      auth.log = log
+
+  def isUser (self, xayaName):
+    for auth in self.authenticators:
+      if auth.isUser (xayaName, self.application):
+        return True
     return False
 
   def authenticate (self, xayaName, pwd):
-    """
-    Checks if the given user (as decoded Xaya name) can be authenticated
-    with the given password on this Xid service.
-    """
-
-    data = self.xidRpc.verifyauth (name=xayaName, application=self.application,
-                                   password=pwd)
-    state = self.unwrapGameState (data)
-
-    self.log.debug ("Authentication state from xid: %s" % state["state"])
-    return state["valid"]
+    for auth in self.authenticators:
+      if auth.authenticate (xayaName, self.application, pwd):
+        return True
+    return False
 
 
 class EjabberdXidAuth:
@@ -109,7 +189,7 @@ class EjabberdXidAuth:
 
     self.serverNames = services
     for s in self.serverNames.values ():
-      s.log = self.log
+      s.setLog (self.log)
 
   def setupLogging (self, handler, logLevel):
     logFmt = "%(asctime)s %(name)s (%(levelname)s): %(message)s"
@@ -237,7 +317,7 @@ class EjabberdXidAuth:
 
     servers = ""
     for n, s in self.serverNames.items ():
-      servers += "\n  %s: %s (%s)" % (n, s.application, s.chain)
+      servers += f"\n  {n}: {s.application}"
     self.log.info ("Running xid authentication script for servers:" + servers)
 
     self.log.info ("Starting main loop...")
@@ -262,25 +342,49 @@ class EjabberdXidAuth:
 if __name__ == "__main__":
   desc = "ejabberd extauth script for authentication with xid"
   parser = argparse.ArgumentParser (description=desc)
-  parser.add_argument ("--servers", required=True, nargs="+",
-                       help="Server names to handle as server,application,rpcurl triplets")
   parser.add_argument ("--logfile", default="/var/log/ejabberd/xidauth.log",
                        help="filename for writing logs to")
   parser.add_argument ("--debug", action="store_true",
                        help="If enabled, turn on debug logging")
   args = parser.parse_args ()
 
+  config = os.getenv ("EJABBERD_XIDAUTH_CONFIG")
+  if config is None:
+    sys.exit ("EJABBERD_XIDAUTH_CONFIG must be set")
+  config = json.loads (config)
+  if not isinstance (config, dict):
+    sys.exit (f"invalid config:\n{config}")
+
   services = {}
-  for s in args.servers:
-    parts = s.split (",")
-    if len (parts) != 3:
-      sys.exit ("Invalid server triplet: %s" % s)
-    [srv, app, rpcUrl] = parts
-    services[srv] = EjabberdServer (app, rpcUrl)
+  for srvName, srvConfig in config.items ():
+    if not isinstance (srvConfig, dict):
+      sys.exit (f"invalid config for server {srvName}:\n{srvConfig}")
+    if not "app" in srvConfig:
+      sys.exit (f"config for server {srvName} has no app defined:\n{srvConfig}")
+
+    s = EjabberdServer (srvConfig["app"])
+    if "xid-gsp" in srvConfig:
+      s.addAuthenticator (XidGspAuthenticator (srvConfig["xid-gsp"]))
+    if "delegation-contract" in srvConfig:
+      delCfg = srvConfig["delegation-contract"]
+      if (not isinstance (delCfg, dict)) \
+          or (not "evm-rpc" in delCfg) \
+          or (not "del-addr" in delCfg):
+        sys.exit (
+            f"invalid delegation-contract config for {srvName}:\n{delCfg}")
+      s.addAuthenticator (DelegationContractAuthenticator (
+          delCfg["evm-rpc"], delCfg["del-addr"]))
+
+    if not s.hasAuthenticators ():
+      sys.exit (
+          f"config for server {srvName} has no authenticators:\n{srvConfig}")
+
+    services[srvName] = s
 
   logLevel = logging.INFO
   if args.debug:
     logLevel = logging.DEBUG
 
-  auth = EjabberdXidAuth (services, logging.FileHandler (args.logfile), logLevel=logLevel)
+  auth = EjabberdXidAuth (services, logging.FileHandler (args.logfile),
+                          logLevel=logLevel)
   auth.run (sys.stdin.buffer, sys.stdout.buffer)

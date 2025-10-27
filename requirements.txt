@@ -1,2 +1,4 @@
+eth_account
 jsonrpclib-pelix
-xayax
+protobuf
+web3==7

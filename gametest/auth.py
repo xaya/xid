@@ -163,7 +163,7 @@ class AuthTest (XidTest):
     # Invalid signature (unauthorised key).  This is also expired, to make
     # sure that we get an "invalid signature" error rather than "expired"
     # for this case.
-    pwd = self.createPassword ("domob", "other", self.addrApp, expired, {})
+    pwd = self.createPassword ("domob", "other", self.addrApp, expiry=expired)
     res = self.getRpc ("verifyauth", name="domob", application="other",
                        password=pwd)
     self.assertEqual (res, {
@@ -174,7 +174,7 @@ class AuthTest (XidTest):
     })
 
     # Invalid signature (changed name).
-    pwd = self.createPassword ("domob", "app", self.addrGeneral, None, {})
+    pwd = self.createPassword ("domob", "app", self.addrGeneral)
     res = self.getRpc ("verifyauth", name="other", application="app",
                        password=pwd)
     self.assertEqual (res, {
@@ -185,7 +185,7 @@ class AuthTest (XidTest):
     })
 
     # Invalid signature (changed application).
-    pwd = self.createPassword ("domob", "app", self.addrGeneral, None, {})
+    pwd = self.createPassword ("domob", "app", self.addrGeneral)
     res = self.getRpc ("verifyauth", name="domob", application="other",
                        password=pwd)
     self.assertEqual (res, {
@@ -196,7 +196,7 @@ class AuthTest (XidTest):
     })
 
     # Expired but otherwise valid.
-    pwd = self.createPassword ("domob", "app", self.addrGeneral, expired, {})
+    pwd = self.createPassword ("domob", "app", self.addrGeneral, expiry=expired)
     res = self.getRpc ("verifyauth", name="domob", application="app",
                        password=pwd)
     self.assertEqual (res, {
@@ -211,7 +211,7 @@ class AuthTest (XidTest):
       "some": "stuff",
       "for": "testing",
     }
-    pwd = self.createPassword ("domob", "app", self.addrGeneral, None, extra)
+    pwd = self.createPassword ("domob", "app", self.addrGeneral, extra=extra)
     res = self.getRpc ("verifyauth", name="domob", application="app",
                        password=pwd)
     self.assertEqual (res, {
@@ -222,7 +222,7 @@ class AuthTest (XidTest):
     })
 
     # Valid without expiry signed with app-specific key.
-    pwd = self.createPassword ("domob", "app", self.addrApp, None, {})
+    pwd = self.createPassword ("domob", "app", self.addrApp)
     res = self.getRpc ("verifyauth", name="domob", application="app",
                        password=pwd)
     self.assertEqual (res, {
@@ -233,7 +233,8 @@ class AuthTest (XidTest):
     })
 
     # Valid with expiry.
-    pwd = self.createPassword ("domob", "app", self.addrGeneral, notExpired, {})
+    pwd = self.createPassword ("domob", "app", self.addrGeneral,
+                               expiry=notExpired)
     res = self.getRpc ("verifyauth", name="domob", application="app",
                        password=pwd)
     self.assertEqual (res, {
@@ -243,8 +244,31 @@ class AuthTest (XidTest):
       "extra": {},
     })
 
+    # Explicit xid-gsp protocol set.
+    pwd = self.createPassword ("domob", "app", self.addrGeneral,
+                               protocol="xid-gsp")
+    res = self.getRpc ("verifyauth", name="domob", application="app",
+                       password=pwd)
+    self.assertEqual (res, {
+      "valid": True,
+      "state": "valid",
+      "expiry": None,
+      "extra": {},
+    })
+
+    # Other protocol not allowed by the xid binary.
+    pwd = self.createPassword ("domob", "app", self.addrGeneral,
+                               protocol="delegation-contract")
+    res = self.getRpc ("verifyauth", name="domob", application="app",
+                       password=pwd)
+    self.assertEqual (res, {
+      "valid": False,
+      "state": "unsupported-protocol",
+    })
+
     # Empty application name does not work as general signer.
-    pwd = self.createPassword ("domob", "app", self.addrEmpty, notExpired, {})
+    pwd = self.createPassword ("domob", "app", self.addrEmpty,
+                               expiry=notExpired)
     res = self.getRpc ("verifyauth", name="domob", application="app",
                        password=pwd)
     self.assertEqual (res, {
@@ -255,7 +279,7 @@ class AuthTest (XidTest):
     })
 
     # Empty application name is fine with app-specific signer.
-    pwd = self.createPassword ("domob", "", self.addrEmpty, notExpired, {})
+    pwd = self.createPassword ("domob", "", self.addrEmpty, expiry=notExpired)
     res = self.getRpc ("verifyauth", name="domob", application="",
                        password=pwd)
     self.assertEqual (res, {
@@ -266,7 +290,7 @@ class AuthTest (XidTest):
     })
 
     # Empty name is also fine.
-    pwd = self.createPassword ("", "app", self.addrGeneral, notExpired, {})
+    pwd = self.createPassword ("", "app", self.addrGeneral, expiry=notExpired)
     res = self.getRpc ("verifyauth", name="", application="app", password=pwd)
     self.assertEqual (res, {
       "valid": True,

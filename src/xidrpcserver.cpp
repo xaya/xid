@@ -149,6 +149,12 @@ XidRpcServer::verifyauth (const std::string& application,
             return res;
           }
 
+        if (cred.GetProtocol () != Protocol::XID_GSP)
+          {
+            res["state"] = "unsupported-protocol";
+            return res;
+          }
+
         if (!cred.ValidateFormat ())
           {
             res["state"] = "invalid-data";

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # coding=utf-8
 
-# Copyright (C) 2019-2022 The Xaya developers
+# Copyright (C) 2019-2025 The Xaya developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-from xidauth import EjabberdXidAuth
+from ejabberd_xidauth import EjabberdXidAuth
 
 import logging
 import sys

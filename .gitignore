@@ -10,6 +10,7 @@ config.h.in~
 config.status
 config.sub
 configure
+configure~
 depcomp
 install-sh
 libtool
@@ -26,3 +27,9 @@ Makefile
 Makefile.in
 *.la
 *.lo
+
+dist
+xidauth.egg-info
+__pycache__
+*.trs
+*.pyc
