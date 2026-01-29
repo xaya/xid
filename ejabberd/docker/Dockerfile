@@ -34,5 +34,11 @@ RUN virtualenv venv && . venv/bin/activate \
     && pip3 install ./xid
 COPY ejabberd/ejabberd_xidauth.py ejabberd/docker/ejabberd_xidauth.sh bin/
 
+# Install custom ejabberd module via ext_mod directory structure.
+# ejabberd compiles and loads it automatically on startup.
+RUN mkdir -p .ejabberd-modules/sources/mod_archive_contacts/src
+COPY ejabberd/mod_archive_contacts.erl \
+     .ejabberd-modules/sources/mod_archive_contacts/src/
+
 USER ejabberd
 LABEL description="ejabberd/ecs image with XID authentication script"
