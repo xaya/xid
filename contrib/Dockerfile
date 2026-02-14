@@ -2,15 +2,14 @@
 # GSP process.  It will expose the HTTP REST interface as well as the
 # ordinary JSON-RPC interface.
 
-FROM xaya/libxayagame AS build
-RUN apk add --no-cache \
+FROM xaya/libxayagame@sha256:71cb3a5a6eeb83abd021accd6f8ee197bd9979e70ce79eab9e01307b071bb8f1 AS build
+RUN apt update && apt -y install \
   autoconf \
   autoconf-archive \
   automake \
-  build-base \
-  gflags-dev \
+  build-essential \
   libtool \
-  pkgconfig
+  pkg-config
 
 # Build and install xid.
 WORKDIR /usr/src/xid
@@ -25,7 +24,7 @@ RUN mkdir bin && cp /usr/local/bin/xid bin/
 RUN cpld bin/xid lib64
 
 # Build the final image.
-FROM alpine
+FROM debian:13-slim
 COPY --from=build /jail /usr/local/
 ENV LD_LIBRARY_PATH "/usr/local/lib64"
 LABEL description="XAYA ID game-state processor"
