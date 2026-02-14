@@ -14,6 +14,7 @@
 #include <json/json.h>
 
 #include <functional>
+#include <mutex>
 #include <string>
 
 namespace xid
@@ -24,6 +25,11 @@ namespace xid
  */
 class XidGame : public xaya::SQLiteGame
 {
+
+private:
+
+  /** Mutex protecting access to the shared XayaRpcClient.  */
+  std::mutex rpcMut;
 
 protected:
 

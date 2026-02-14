@@ -92,6 +92,7 @@ XidGame::GetStateAsJson (const xaya::SQLiteDatabase& db)
 std::string
 XidGame::VerifyMessage (const std::string& msg, const std::string& sgn)
 {
+  std::lock_guard<std::mutex> lock(rpcMut);
   return xaya::VerifyMessage (GetXayaRpc (), msg, sgn);
 }
 

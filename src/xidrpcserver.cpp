@@ -136,14 +136,33 @@ XidRpcServer::verifyauth (const std::string& application,
       << "  name: " << name << "\n"
       << "  application: " << application << "\n"
       << "  password: " << password;
+
+  /* Parse and validate credentials before acquiring the DB snapshot,
+     since none of this needs database access.  */
+  Credentials cred(name, application);
+  const bool parsed = cred.FromPassword (password);
+
+  std::string sgnAddr;
+  bool credValid = false;
+  if (parsed && cred.GetProtocol () == Protocol::XID_GSP
+      && cred.ValidateFormat ())
+    {
+      /* Verify the message signature via RPC to Xaya Core.  This is done
+         outside GetCustomStateData so we don't hold the DB snapshot during
+         a blocking network call.  The mutex inside VerifyMessage serialises
+         access to the non-thread-safe RPC client.  */
+      const std::string authMsg = cred.GetAuthMessage ();
+      sgnAddr = logic.VerifyMessage (authMsg, cred.GetSignature ());
+      credValid = true;
+    }
+
   return logic.GetCustomStateData (game,
-    [this, &name, &application, &password] (const xaya::SQLiteDatabase& db)
+    [&] (const xaya::SQLiteDatabase& db)
       {
         Json::Value res(Json::objectValue);
         res["valid"] = false;
 
-        Credentials cred(name, application);
-        if (!cred.FromPassword (password))
+        if (!parsed)
           {
             res["state"] = "malformed";
             return res;
@@ -155,7 +174,7 @@ XidRpcServer::verifyauth (const std::string& application,
             return res;
           }
 
-        if (!cred.ValidateFormat ())
+        if (!credValid)
           {
             res["state"] = "invalid-data";
             return res;
@@ -173,9 +192,6 @@ XidRpcServer::verifyauth (const std::string& application,
         CHECK_EQ (extraMap.size (), extra.size ());
         res["extra"] = extra;
 
-        const std::string authMsg = cred.GetAuthMessage ();
-        const std::string sgnAddr = logic.VerifyMessage (authMsg,
-                                                         cred.GetSignature ());
         if (!IsValidSigner (db, sgnAddr, name, application))
           {
             VLOG (1) << "Not a valid signer address: " << sgnAddr;
